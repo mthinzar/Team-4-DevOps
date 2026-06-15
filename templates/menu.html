@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Menu</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-light">
+
+<nav class="navbar navbar-dark bg-danger">
+    <div class="container">
+        <span class="navbar-brand">🍔 Menu</span>
+        <a href="/" class="btn btn-light btn-sm">Home</a>
+    </div>
+</nav>
+
+<div class="container mt-4">
+    <h2>Menu Items</h2>
+
+    <div class="row" id="menu-list"></div>
+</div>
+
+<script>
+fetch('/api/menu')
+    .then(res => res.json())
+    .then(data => {
+        let container = document.getElementById("menu-list");
+
+        data.foods.forEach(food => {
+            container.innerHTML += `
+                <div class="col-md-4 mb-3">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5>${food.name}</h5>
+                            <p>$${food.price}</p>
+                            <button class="btn btn-danger w-100">Add to Cart</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+    });
+</script>
+
+</body>
+</html>
