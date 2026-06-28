@@ -15,27 +15,47 @@ app.get('/', (req, res) => {
 });
 
 app.get('/menu', (req, res) => {
-
     const foods = [
         {
-            name: 'Chicken Rice',
-            description: 'Roasted chicken with fragrant rice',
-            price: 5.50
-        },
-        {
-            name: 'Nasi Lemak',
-            description: 'Coconut rice with sambal',
-            price: 4.50
-        },
-        {
             name: 'Burger',
-            description: 'Beef burger with cheese',
-            price: 6.00
+            description: 'Grilled beef burger with cheese and lettuce',
+            price: 6.00,
+            category: 'Burgers',
+            image: '/images/burger.png'
+        },
+        {
+            name: 'Cheese Pizza',
+            description: 'Crispy crust with mozzarella and tomato sauce',
+            price: 8.00,
+            category: 'Burgers',
+            image: '/images/pizza.png'
+        },
+        {
+            name: 'Creamy Pasta',
+            description: 'Rich creamy pasta with tender chicken',
+            price: 7.90,
+            category: 'Rice',
+            image: '/images/pasta.png'
+        },
+        {
+            name: 'Mala Xiang Guo',
+            description: 'Spicy stir-fry with fresh seafood and vegetables',
+            price: 9.90,
+            category: 'Rice',
+            image: '/images/mala.png'
+        },
+        {
+            name: 'Ice Lemon Tea',
+            description: 'Refreshing iced tea with fresh lemon',
+            price: 2.90,
+            category: 'Drinks',
+            image: '/images/lemontea.png'
         }
     ];
-
     res.render('menu', { foods });
 });
+
+
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

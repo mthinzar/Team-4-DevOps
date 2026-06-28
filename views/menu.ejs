@@ -3,101 +3,286 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Menu</title>
+    <title>FoodHub Menu</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
+        :root {
+            --brand: #e23744;
+            --brand-dark: #c52d39;
+            --pink-soft: #ffeef1;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: #fff;
+        }
+
+        .navbar-brand {
+            color: #1a1a1a;
+            font-weight: 800;
+            font-size: 1.6rem;
+            text-decoration: none;
+        }
+
+        .nav-link-custom {
+            color: #1a1a1a;
+            font-weight: 500;
+            margin: 0 1rem;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-link-custom:hover {
+            color: var(--brand);
+        }
+
+        .brand-red {
+            color: var(--brand);
+        }
+
+        .menu-header {
+            background: linear-gradient(120deg, #fde2e7 0%, #fcd7dd 100%);
+            border-radius: 24px;
+            padding: 3rem;
+        }
+
+        .search-box {
+            border-radius: 12px;
+            padding: 0.8rem 1rem;
+            border: 1.5px solid #e0e0e0;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .search-box:focus {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px rgba(226,55,68,0.12);
+            outline: none;
+        }
+
+        .category-btn {
+            border: 1.5px solid var(--brand);
+            color: var(--brand);
+            border-radius: 30px;
+            padding: 8px 20px;
+            background: white;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .category-btn:hover,
+        .category-btn.active {
+            background: var(--brand);
+            color: white;
+        }
+
         .food-card {
+            border: none;
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
             transition: 0.25s;
         }
 
         .food-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
         }
 
         .food-image {
             height: 220px;
             object-fit: cover;
+            width: 100%;
+        }
+
+        .price {
+            color: var(--brand);
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .btn-cart {
+            background: var(--brand);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 10px;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+
+        .btn-cart:hover {
+            background: var(--brand-dark);
+            color: white;
+        }
+
+        .category-badge {
+            display: inline-block;
+            background: var(--pink-soft);
+            color: var(--brand);
+            font-size: 0.72rem;
+            font-weight: 600;
+            border-radius: 20px;
+            padding: 2px 10px;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        #empty-state {
+            display: none;
+            text-align: center;
+            padding: 4rem 1rem;
+            color: #aaa;
+        }
+
+        #empty-state .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
         }
     </style>
 </head>
 
-<body class="bg-light">
+<body>
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-danger shadow">
+<nav class="navbar navbar-expand-lg bg-white py-3 shadow-sm">
     <div class="container">
 
-        <a class="navbar-brand fw-bold" href="/">
-            🍔 FoodHub
+        <a class="navbar-brand" href="/">
+            food<span class="brand-red">hub</span>
         </a>
 
-        <div>
-            <a href="/" class="btn btn-outline-light me-2">Home</a>
-            <a href="/menu" class="btn btn-light">Menu</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navMenu">
+            <div class="d-flex flex-grow-1 justify-content-center mt-3 mt-lg-0">
+                <a href="/" class="nav-link-custom">Home</a>
+                <a href="/menu" class="nav-link-custom brand-red">Menu</a>
+            </div>
         </div>
 
     </div>
 </nav>
 
-<div class="container py-4">
+<div class="container mt-4 pb-5">
 
-    <h1 class="mb-4">
-        Menu
-    </h1>
+    <div class="menu-header text-center">
+        <h1 class="fw-bold">Explore Our Menu</h1>
+        <p class="text-muted mb-0">Freshly prepared meals delivered to your doorstep.</p>
 
-    <!-- Search Bar -->
-    <div class="mb-4">
-        <input
-            type="text"
-            class="form-control"
-            placeholder="Search food...">
+        <div class="mt-4">
+            <input
+                type="text"
+                id="searchInput"
+                class="form-control search-box"
+                placeholder="Search for food...">
+        </div>
     </div>
 
-    <div class="row">
+    <div class="text-center my-4">
+        <button class="category-btn active me-2 mb-2" data-category="All">All</button>
+        <button class="category-btn me-2 mb-2" data-category="Rice">Rice</button>
+        <button class="category-btn me-2 mb-2" data-category="Burgers">Burgers</button>
+        <button class="category-btn me-2 mb-2" data-category="Drinks">Drinks</button>
+        <button class="category-btn mb-2" data-category="Desserts">Desserts</button>
+    </div>
+
+    <div class="row" id="foodGrid">
 
         <% foods.forEach(food => { %>
+        <div
+            class="col-md-4 mb-4 food-item"
+            data-category="<%= food.category %>"
+            data-name="<%= food.name.toLowerCase() %>"
+            data-description="<%= food.description.toLowerCase() %>">
 
-        <div class="col-lg-4 col-md-6 mb-4">
-
-            <div class="card food-card shadow-sm h-100">
+            <div class="card food-card h-100">
 
                 <img
-                    src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800"
-                    class="card-img-top food-image"
-                    alt="Food">
+                    src="<%= food.image %>"
+                    class="food-image card-img-top"
+                    alt="<%= food.name %>">
 
                 <div class="card-body">
+                    <span class="category-badge"><%= food.category %></span>
+                    <h5 class="fw-bold mb-1"><%= food.name %></h5>
+                    <p class="text-muted small"><%= food.description %></p>
 
-                    <h5 class="card-title">
-                        <%= food.name %>
-                    </h5>
-
-                    <p class="text-muted">
-                        <%= food.description %>
-                    </p>
-
-                    <h5 class="text-danger">
-                        $<%= food.price.toFixed(2) %>
-                    </h5>
-
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span class="price">$<%= food.price.toFixed(2) %></span>
+                    </div>
                 </div>
 
-                <div class="card-footer bg-white border-0">
-                    <button class="btn btn-danger w-100">
-                        Add to Cart
-                    </button>
+                <div class="card-footer bg-white border-0 pb-3">
+                    <button class="btn btn-cart w-100">Add to Cart</button>
                 </div>
 
             </div>
-
         </div>
-
         <% }) %>
 
     </div>
 
+    <div id="empty-state">
+        <div class="empty-icon">🍽️</div>
+        <h5 class="fw-bold">No items found</h5>
+        <p>Try a different search or category.</p>
+    </div>
+
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    const searchInput  = document.getElementById('searchInput');
+    const categoryBtns = document.querySelectorAll('.category-btn');
+    const foodItems    = document.querySelectorAll('.food-item');
+    const emptyState   = document.getElementById('empty-state');
+
+    let activeCategory = 'All';
+
+    categoryBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            categoryBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            activeCategory = btn.dataset.category;
+            filterItems();
+        });
+    });
+
+    searchInput.addEventListener('input', filterItems);
+
+    function filterItems() {
+        const query = searchInput.value.toLowerCase().trim();
+        let visibleCount = 0;
+
+        foodItems.forEach(item => {
+            const matchesCategory =
+                activeCategory === 'All' || item.dataset.category === activeCategory;
+
+            const matchesSearch =
+                !query ||
+                item.dataset.name.includes(query) ||
+                item.dataset.description.includes(query);
+
+            if (matchesCategory && matchesSearch) {
+                item.style.display = '';
+                visibleCount++;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+
+        emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+</script>
 
 </body>
 </html>
