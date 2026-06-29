@@ -260,8 +260,8 @@
 <!-- Menu Hero -->
 <section class="container mt-4">
     <div class="menu-hero p-4 p-md-5">
-        <h1>Explore Our <span class="brand-red">Menu</span></h1>
-        <p class="tagline mt-2 mb-4">Freshly prepared meals delivered to your doorstep.</p>
+        <h1>Explore Our <span class="brand-red">Stalls</span></h1>
+
 
         <div class="menu-search">
             <input type="text" id="searchInput" class="form-control" placeholder="Search for food...">
@@ -269,14 +269,6 @@
     </div>
 </section>
 
-<!-- Category Filters -->
-<section class="container mt-4">
-    <div class="d-flex flex-wrap justify-content-center gap-2">
-        <% categories.forEach((cat, i) => { %>
-        <button class="filter-pill <%= i === 0 ? 'active' : '' %>" data-category="<%= cat %>"><%= cat %></button>
-        <% }) %>
-    </div>
-</section>
 
 <!-- Menu Grid -->
 <section class="container py-5">
