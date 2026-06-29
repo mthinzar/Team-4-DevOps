@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LaunchLab Eats — Reviews</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="app-header">
+      <span class="eyebrow">LaunchLab Eats</span>
+      <h1>Reviews &amp; Ratings</h1>
+      <p class="subtitle">
+        See what customers are saying before you order — and what merchants say back.
+        This page is a standalone demo of the review feature only.
+      </p>
+    </header>
+
+    <section class="session-bar">
+      <div class="session-status" id="sessionStatus">Not logged in</div>
+      <div class="session-actions">
+        <button class="btn btn-ghost" data-role="customer">Log in as Customer</button>
+        <button class="btn btn-ghost" data-role="merchant">Log in as Merchant</button>
+        <button class="btn btn-text" id="logoutBtn" hidden>Log out</button>
+      </div>
+    </section>
+
+    <section class="food-picker">
+      <label for="foodSelect">Dish</label>
+      <select id="foodSelect"></select>
+    </section>
+
+    <section class="rating-ticket" id="ratingTicket"></section>
+
+    <section class="review-form-wrap" id="reviewFormWrap" hidden>
+      <h2>Leave a review</h2>
+      <form id="reviewForm">
+        <div class="stars-input" id="starsInput" data-value="0">
+          <button type="button" class="star" data-value="1" aria-label="1 star">★</button>
+          <button type="button" class="star" data-value="2" aria-label="2 stars">★</button>
+          <button type="button" class="star" data-value="3" aria-label="3 stars">★</button>
+          <button type="button" class="star" data-value="4" aria-label="4 stars">★</button>
+          <button type="button" class="star" data-value="5" aria-label="5 stars">★</button>
+        </div>
+        <textarea id="commentInput" maxlength="500" placeholder="What did you think of this dish?"></textarea>
+        <div class="form-row">
+          <button type="submit" class="btn btn-primary" id="submitReviewBtn">Post review</button>
+          <span class="form-error" id="formError"></span>
+        </div>
+      </form>
+    </section>
+
+    <section class="reviews-list" id="reviewsList"></section>
+  </div>
+
+  <script src="review.js"></script>
+</body>
+</html>
