@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodHub Menu</title>
+    <title>FoodHub - Menu</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -12,19 +12,21 @@
         :root {
             --brand: #e23744;
             --brand-dark: #c52d39;
+            --pink: #fcd7dd;
             --pink-soft: #ffeef1;
         }
 
         body {
             font-family: 'Poppins', sans-serif;
-            background: #fff;
+            background-color: #ffffff;
+            color: #1a1a1a;
         }
 
-        .navbar-brand {
-            color: #1a1a1a;
-            font-weight: 800;
-            font-size: 1.6rem;
-            text-decoration: none;
+        .brand-red { color: var(--brand); }
+
+        /* Navbar */
+        .navbar-brand img {
+            height: 72px;
         }
 
         .nav-link-custom {
@@ -32,256 +34,423 @@
             font-weight: 500;
             margin: 0 1rem;
             text-decoration: none;
-            transition: color 0.2s;
+            position: relative;
         }
 
-        .nav-link-custom:hover {
-            color: var(--brand);
-        }
-
-        .brand-red {
-            color: var(--brand);
-        }
-
-        .menu-header {
-            background: linear-gradient(120deg, #fde2e7 0%, #fcd7dd 100%);
-            border-radius: 24px;
-            padding: 3rem;
-        }
-
-        .search-box {
-            border-radius: 12px;
-            padding: 0.8rem 1rem;
-            border: 1.5px solid #e0e0e0;
-            transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .search-box:focus {
-            border-color: var(--brand);
-            box-shadow: 0 0 0 3px rgba(226,55,68,0.12);
-            outline: none;
-        }
-
-        .category-btn {
-            border: 1.5px solid var(--brand);
-            color: var(--brand);
-            border-radius: 30px;
-            padding: 8px 20px;
-            background: white;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 500;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
-        .category-btn:hover,
-        .category-btn.active {
+        .nav-link-custom::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -6px;
+            width: 0;
+            height: 2px;
             background: var(--brand);
-            color: white;
-        }
-
-        .food-card {
-            border: none;
-            border-radius: 18px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.07);
             transition: 0.25s;
         }
 
-        .food-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 12px 24px rgba(0,0,0,0.12);
-        }
+        .nav-link-custom:hover { color: var(--brand); }
+        .nav-link-custom:hover::after { width: 100%; }
+        .nav-link-custom.active { color: var(--brand); }
+        .nav-link-custom.active::after { width: 100%; }
 
-        .food-image {
-            height: 220px;
-            object-fit: cover;
-            width: 100%;
-        }
-
-        .price {
+        .btn-login {
+            border: 1px solid var(--brand);
             color: var(--brand);
-            font-weight: 700;
-            font-size: 1.1rem;
+            background: #fff;
+            border-radius: 8px;
         }
+        .btn-login:hover { background: var(--brand); color: #fff; }
 
-        .btn-cart {
+        .btn-signup {
             background: var(--brand);
-            color: white;
+            color: #fff;
+            border: 1px solid var(--brand);
+            border-radius: 8px;
+        }
+        .btn-signup:hover { background: var(--brand-dark); color: #fff; }
+
+        /* Menu hero */
+        .menu-hero {
+            background: linear-gradient(120deg, #fde2e7 0%, #fcd7dd 60%, #f9c4cd 100%);
+            border-radius: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .menu-hero h1 {
+            font-weight: 800;
+            font-size: clamp(2rem, 4.5vw, 3.2rem);
+        }
+        .menu-hero .tagline { color: #6b4a4f; }
+
+        .menu-search {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+        .menu-search .form-control {
+            border-radius: 12px;
+            padding: 0.85rem 1.2rem;
             border: none;
-            border-radius: 10px;
-            padding: 10px;
-            font-family: 'Poppins', sans-serif;
-            font-weight: 600;
-            transition: background 0.2s;
+            box-shadow: 0 8px 20px rgba(226, 55, 68, 0.12);
+        }
+        .menu-search .form-control:focus {
+            box-shadow: 0 0 0 0.2rem rgba(226, 55, 68, 0.15);
         }
 
-        .btn-cart:hover {
-            background: var(--brand-dark);
-            color: white;
-        }
-
-        .category-badge {
-            display: inline-block;
-            background: var(--pink-soft);
+        /* Category filter pills */
+        .filter-pill {
+            border: 1px solid var(--brand);
             color: var(--brand);
-            font-size: 0.72rem;
-            font-weight: 600;
-            border-radius: 20px;
-            padding: 2px 10px;
-            margin-bottom: 6px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
+            background: #fff;
+            border-radius: 30px;
+            padding: 0.4rem 1.3rem;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: 0.2s;
+        }
+        .filter-pill:hover { background: var(--pink-soft); }
+        .filter-pill.active {
+            background: var(--brand);
+            color: #fff;
         }
 
-        #empty-state {
+        /* Dish cards (matches home page styling) */
+        .dish-card {
+            border: 1px solid #f0d0d4;
+            border-radius: 16px 16px 90px 90px;
+            text-align: center;
+            transition: 0.3s;
+            background: #fff;
+            height: 100%;
+        }
+        .dish-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 14px 28px rgba(226, 55, 68, 0.16);
+            border-color: var(--brand);
+        }
+
+        .dish-img-wrap {
+            background: var(--pink-soft);
+            padding: 1.25rem 0 0.75rem;
+            border-radius: 16px 16px 50% 50%;
+            position: relative;
+        }
+
+        .dish-img {
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            box-shadow: 0 6px 14px rgba(0,0,0,0.12);
+        }
+
+        .dish-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            background: var(--brand);
+            color: #fff;
+            font-size: 0.62rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            padding: 0.25rem 0.6rem;
+            border-radius: 20px;
+        }
+
+        .dish-name { font-weight: 600; font-size: 1rem; margin-top: 0.75rem; }
+        .dish-desc { font-size: 0.78rem; color: #7a7a7a; padding: 0 0.9rem; min-height: 48px; }
+        .dish-price { color: var(--brand); font-weight: 700; font-size: 1rem; }
+
+        .btn-add-cart {
+            background: var(--brand);
+            color: #fff;
+            font-size: 0.8rem;
+            border: none;
+            padding: 0.45rem 1.3rem;
+            border-radius: 8px;
+            margin-bottom: 1.4rem;
+            font-weight: 500;
+            transition: 0.25s;
+        }
+        .btn-add-cart:hover { background: var(--brand-dark); color: #fff; }
+
+        .no-results {
             display: none;
             text-align: center;
-            padding: 4rem 1rem;
-            color: #aaa;
+            color: #7a7a7a;
+            padding: 3rem 0;
         }
 
-        #empty-state .empty-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
+        /* Auth modals */
+        .auth-modal .modal-content {
+            border: none;
+            border-radius: 18px;
+            overflow: hidden;
         }
+        .auth-header {
+            background: linear-gradient(120deg, #fde2e7 0%, #f9c4cd 100%);
+            text-align: center;
+            padding: 1.75rem 1.5rem 1.25rem;
+            position: relative;
+        }
+        .auth-header img { height: 56px; }
+        .auth-header h5 { font-weight: 700; margin-top: 0.75rem; margin-bottom: 0; }
+        .auth-header p { font-size: 0.85rem; color: #6b4a4f; margin: 0; }
+        .auth-body { padding: 1.5rem; }
+        .auth-body .form-label { font-weight: 500; font-size: 0.85rem; }
+        .auth-body .form-control {
+            border-radius: 10px;
+            padding: 0.6rem 0.9rem;
+        }
+        .auth-body .form-control:focus {
+            border-color: var(--brand);
+            box-shadow: 0 0 0 0.2rem rgba(226, 55, 68, 0.15);
+        }
+        .btn-auth {
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.65rem;
+            font-weight: 600;
+            width: 100%;
+            transition: 0.25s;
+        }
+        .btn-auth:hover { background: var(--brand-dark); color: #fff; }
+        .auth-switch { font-size: 0.85rem; text-align: center; margin-top: 1rem; }
+        .auth-switch a { color: var(--brand); text-decoration: none; font-weight: 600; cursor: pointer; }
+        .auth-switch a:hover { text-decoration: underline; }
+
+        /* Footer */
+        footer {
+            background: #1a1a1a;
+            color: #ddd;
+        }
+        footer a { color: #ddd; text-decoration: none; }
+        footer a:hover { color: var(--brand); }
     </style>
 </head>
 
 <body>
 
+<!-- Navbar -->
 <nav class="navbar navbar-expand-lg bg-white py-3 shadow-sm">
     <div class="container">
-
-        <a class="navbar-brand" href="/">
-            food<span class="brand-red">hub</span>
+        <a class="navbar-brand fw-bold fs-3" href="/">
+            <img src="<%= images.logo %>" alt="FoodHub"
+                 onerror="this.style.display='none';document.getElementById('brandText').style.display='inline';">
+            <span id="brandText" style="display:none;">food<span class="brand-red">hub</span></span>
         </a>
 
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navMenu">
-            <div class="d-flex flex-grow-1 justify-content-center mt-3 mt-lg-0">
-                <a href="/" class="nav-link-custom">Home</a>
-                <a href="/menu" class="nav-link-custom brand-red">Menu</a>
-            </div>
+        <div class="d-none d-lg-flex flex-grow-1 justify-content-center">
+            <a href="/" class="nav-link-custom">Home</a>
+            <a href="/menu" class="nav-link-custom active">Menu</a>
+            <a href="/#popular" class="nav-link-custom">Categories</a>
         </div>
 
+        <div>
+            <button type="button" class="btn btn-login me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
+            <button type="button" class="btn btn-signup" data-bs-toggle="modal" data-bs-target="#signupModal">Sign Up</button>
+        </div>
     </div>
 </nav>
 
-<div class="container mt-4 pb-5">
+<!-- Menu Hero -->
+<section class="container mt-4">
+    <div class="menu-hero p-4 p-md-5">
+        <h1>Explore Our <span class="brand-red">Menu</span></h1>
+        <p class="tagline mt-2 mb-4">Freshly prepared meals delivered to your doorstep.</p>
 
-    <div class="menu-header text-center">
-        <h1 class="fw-bold">Explore Our Menu</h1>
-        <p class="text-muted mb-0">Freshly prepared meals delivered to your doorstep.</p>
-
-        <div class="mt-4">
-            <input
-                type="text"
-                id="searchInput"
-                class="form-control search-box"
-                placeholder="Search for food...">
+        <div class="menu-search">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search for food...">
         </div>
     </div>
+</section>
 
-    <div class="text-center my-4">
-        <button class="category-btn active me-2 mb-2" data-category="All">All</button>
-        <button class="category-btn me-2 mb-2" data-category="Rice">Rice</button>
-        <button class="category-btn me-2 mb-2" data-category="Burgers">Burgers</button>
-        <button class="category-btn me-2 mb-2" data-category="Drinks">Drinks</button>
-        <button class="category-btn mb-2" data-category="Desserts">Desserts</button>
+<!-- Category Filters -->
+<section class="container mt-4">
+    <div class="d-flex flex-wrap justify-content-center gap-2">
+        <% categories.forEach((cat, i) => { %>
+        <button class="filter-pill <%= i === 0 ? 'active' : '' %>" data-category="<%= cat %>"><%= cat %></button>
+        <% }) %>
     </div>
+</section>
 
-    <div class="row" id="foodGrid">
+<!-- Menu Grid -->
+<section class="container py-5">
+    <div class="row g-3" id="menuGrid">
 
         <% foods.forEach(food => { %>
-        <div
-            class="col-md-4 mb-4 food-item"
-            data-category="<%= food.category %>"
-            data-name="<%= food.name.toLowerCase() %>"
-            data-description="<%= food.description.toLowerCase() %>">
 
-            <div class="card food-card h-100">
+        <div class="col-6 col-md-4 col-lg-3 menu-item"
+             data-category="<%= food.category %>"
+             data-name="<%= food.name.toLowerCase() %>">
 
-                <img
-                    src="<%= food.image %>"
-                    class="food-image card-img-top"
-                    alt="<%= food.name %>">
+            <div class="dish-card">
 
-                <div class="card-body">
-                    <span class="category-badge"><%= food.category %></span>
-                    <h5 class="fw-bold mb-1"><%= food.name %></h5>
-                    <p class="text-muted small"><%= food.description %></p>
-
-                    <div class="d-flex justify-content-between align-items-center mt-2">
-                        <span class="price">$<%= food.price.toFixed(2) %></span>
-                    </div>
+                <div class="dish-img-wrap">
+                    <span class="dish-badge"><%= food.category %></span>
+                    <img src="<%= food.image %>" class="dish-img" alt="<%= food.name %>">
                 </div>
 
-                <div class="card-footer bg-white border-0 pb-3">
-                    <button class="btn btn-cart w-100">Add to Cart</button>
+                <div class="px-2">
+                    <div class="dish-name"><%= food.name %></div>
+                    <p class="dish-desc"><%= food.description %></p>
+                    <div class="dish-price mb-2">$<%= food.price.toFixed(2) %></div>
+                    <button class="btn btn-add-cart">Add to cart</button>
                 </div>
 
             </div>
+
         </div>
+
         <% }) %>
 
     </div>
 
-    <div id="empty-state">
-        <div class="empty-icon">🍽️</div>
-        <h5 class="fw-bold">No items found</h5>
+    <div class="no-results" id="noResults">
+        <h5>No dishes found</h5>
         <p>Try a different search or category.</p>
     </div>
+</section>
 
+<!-- Footer -->
+<footer class="py-4">
+    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
+        <span class="mb-2 mb-md-0">&copy; 2026 FoodHub. All rights reserved.</span>
+        <div>
+            <a href="/" class="me-3">Home</a>
+            <a href="/menu" class="me-3">Menu</a>
+            <a href="/#popular">Categories</a>
+        </div>
+    </div>
+</footer>
+
+<!-- Login Modal -->
+<div class="modal fade auth-modal" id="loginModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="auth-header">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                <img src="<%= images.logo %>" alt="FoodHub">
+                <h5>Welcome Back</h5>
+                <p>Log in to continue ordering</p>
+            </div>
+
+            <div class="auth-body">
+                <!-- TODO: hook up to backend later (action="/login" method="POST") -->
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" placeholder="you@example.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" placeholder="Enter your password" required>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe" style="font-size:0.82rem;">Remember me</label>
+                        </div>
+                        <a href="#" style="font-size:0.82rem; color:var(--brand); text-decoration:none;">Forgot password?</a>
+                    </div>
+                    <button type="submit" class="btn-auth">Login</button>
+                </form>
+
+                <p class="auth-switch">
+                    Don't have an account?
+                    <a data-bs-toggle="modal" data-bs-target="#signupModal" data-bs-dismiss="modal">Sign Up</a>
+                </p>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<!-- Sign Up Modal -->
+<div class="modal fade auth-modal" id="signupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+
+            <div class="auth-header">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
+                <img src="<%= images.logo %>" alt="FoodHub">
+                <h5>Create Account</h5>
+                <p>Join FoodHub and start ordering</p>
+            </div>
+
+            <div class="auth-body">
+                <!-- TODO: hook up to backend later (action="/signup" method="POST") -->
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" class="form-control" placeholder="Your name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" placeholder="you@example.com" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" class="form-control" placeholder="Create a password" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" placeholder="Re-enter your password" required>
+                    </div>
+                    <button type="submit" class="btn-auth">Sign Up</button>
+                </form>
+
+                <p class="auth-switch">
+                    Already have an account?
+                    <a data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Login</a>
+                </p>
+            </div>
+
+        </div>
+    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Search + category filtering -->
 <script>
-    const searchInput  = document.getElementById('searchInput');
-    const categoryBtns = document.querySelectorAll('.category-btn');
-    const foodItems    = document.querySelectorAll('.food-item');
-    const emptyState   = document.getElementById('empty-state');
+    const searchInput = document.getElementById('searchInput');
+    const pills = document.querySelectorAll('.filter-pill');
+    const items = document.querySelectorAll('.menu-item');
+    const noResults = document.getElementById('noResults');
 
     let activeCategory = 'All';
 
-    categoryBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            categoryBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            activeCategory = btn.dataset.category;
-            filterItems();
+    function applyFilters() {
+        const term = searchInput.value.trim().toLowerCase();
+        let visible = 0;
+
+        items.forEach(item => {
+            const matchesCategory = activeCategory === 'All' || item.dataset.category === activeCategory;
+            const matchesSearch = item.dataset.name.includes(term);
+            const show = matchesCategory && matchesSearch;
+            item.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+
+        noResults.style.display = visible === 0 ? 'block' : 'none';
+    }
+
+    pills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            pills.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            activeCategory = pill.dataset.category;
+            applyFilters();
         });
     });
 
-    searchInput.addEventListener('input', filterItems);
-
-    function filterItems() {
-        const query = searchInput.value.toLowerCase().trim();
-        let visibleCount = 0;
-
-        foodItems.forEach(item => {
-            const matchesCategory =
-                activeCategory === 'All' || item.dataset.category === activeCategory;
-
-            const matchesSearch =
-                !query ||
-                item.dataset.name.includes(query) ||
-                item.dataset.description.includes(query);
-
-            if (matchesCategory && matchesSearch) {
-                item.style.display = '';
-                visibleCount++;
-            } else {
-                item.style.display = 'none';
-            }
-        });
-
-        emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
-    }
+    searchInput.addEventListener('input', applyFilters);
 </script>
 
 </body>
