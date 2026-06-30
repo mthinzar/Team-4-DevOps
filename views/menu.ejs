@@ -296,28 +296,32 @@
 
 <!-- Navbar -->
 <nav class="navbar navbar-expand-lg bg-white py-3 shadow-sm">
-    <div class="container">
-        <a class="navbar-brand fw-bold fs-3" href="/">
-            <img src="<%= images.logo %>" alt="FoodHub"
-                 onerror="this.style.display='none';document.getElementById('brandText').style.display='inline';">
-            <span id="brandText" style="display:none;">food<span class="brand-red">hub</span></span>
-        </a>
+        <div class="container">
+            <a class="navbar-brand fw-bold fs-3" href="/">
+                <img src="<%= images.logo %>" alt="FoodHub"
+                    onerror="this.style.display='none';document.getElementById('brandText').style.display='inline';">
+                <span id="brandText" style="display:none;">food<span class="brand-red">hub</span></span>
+            </a>
 
-        <div class="d-none d-lg-flex flex-grow-1 justify-content-center">
-            <a href="/" class="nav-link-custom">Home</a>
-            <a href="/menu" class="nav-link-custom active">Menu</a>
-            <a href="/#popular" class="nav-link-custom">Categories</a>
-        </div>
+            <div class="d-none d-lg-flex flex-grow-1 justify-content-center">
+                <a href="/" class="nav-link-custom">Home</a>
+                <a href="/menu" class="nav-link-custom">Menu</a>
+                <a href="#popular" class="nav-link-custom">Categories</a>
+            </div>
 
-        <div class="d-flex align-items-center">
-            <button type="button" class="btn btn-cart position-relative me-2" id="cartButton" aria-label="Open cart">
-                &#128722;<span class="cart-badge" id="cartBadge">0</span>
-            </button>
-            <button type="button" class="btn btn-login me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
-            <button type="button" class="btn btn-signup" data-bs-toggle="modal" data-bs-target="#signupModal">Sign Up</button>
+            <div class="d-flex align-items-center">
+                <button type="button" class="btn btn-cart position-relative me-2" id="cartButton"
+                    aria-label="Open cart">
+                    &#128722;<span class="cart-badge" id="cartBadge">0</span>
+                </button>
+                <button type="button" class="btn btn-login me-2" data-bs-toggle="modal"
+                    data-bs-target="#loginModal">Login</button>
+                <button type="button" class="btn btn-signup" data-bs-toggle="modal" data-bs-target="#signupModal">Sign
+                    Up</button>
+            </div>
         </div>
-    </div>
-</nav>
+    </nav>
+
 
 <!-- Menu Hero -->
 <section class="container mt-4">
@@ -331,56 +335,48 @@
     </div>
 </section>
 
-<!-- Category Filters -->
-<section class="container mt-4">
-    <div class="d-flex flex-wrap justify-content-center gap-2">
-        <% categories.forEach((cat, i) => { %>
-        <button class="filter-pill <%= i === 0 ? 'active' : '' %>" data-category="<%= cat %>"><%= cat %></button>
-        <% }) %>
-    </div>
-</section>
 
 <!-- Menu Grid -->
-<section class="container py-5">
-    <div class="row g-3" id="menuGrid">
-
-        <% foods.forEach(food => { %>
-
-        <div class="col-6 col-md-4 col-lg-3 menu-item"
-             data-category="<%= food.category %>"
-             data-name="<%= food.name.toLowerCase() %>">
-
-            <div class="dish-card">
-
-                <div class="dish-img-wrap">
-                    <span class="dish-badge"><%= food.category %></span>
-                    <img src="<%= food.image %>" class="dish-img" alt="<%= food.name %>">
-                </div>
-
-                <div class="px-2">
-                    <div class="dish-name"><%= food.name %></div>
-                    <p class="dish-desc"><%= food.description %></p>
-                    <div class="dish-price mb-2">$<%= food.price.toFixed(2) %></div>
-                    <button class="btn btn-add-cart add-to-cart"
-                            data-name="<%= food.name %>"
-                            data-price="<%= food.price %>"
-                            data-image="<%= food.image %>">Add to cart</button>
-                </div>
-
+<section class="container mt-4" id="stallDirectory">
+    <h3 class="mb-3 fw-bold">Select a Stall</h3>
+    <div class="row g-3">
+        <% stalls.forEach(stall => { %>
+        <div class="col-6 col-md-4">
+            <div class="card text-center p-4 shadow-sm" style="cursor: pointer; border-radius: 16px;" onclick="openStall('<%= stall.id %>')">
+                <h1 class="display-4"><%= stall.emoji %></h1>
+                <h5 class="mt-2 fw-bold"><%= stall.name %></h5>
             </div>
-
         </div>
-
         <% }) %>
-
-    </div>
-
-    <div class="no-results" id="noResults">
-        <h5>No dishes found</h5>
-        <p>Try a different search or category.</p>
     </div>
 </section>
 
+<section class="container py-5" id="stallMenu" style="display: none;">
+    <button class="btn btn-outline-dark mb-4" onclick="goBackToStalls()">← Back to Stalls</button>
+    <div class="row g-3" id="menuGrid">
+        <% stalls.forEach(stall => { %>
+            <% stall.foods.forEach(food => { %>
+            <div class="col-6 col-md-4 col-lg-3 menu-item stall-group-<%= stall.id %>" data-name="<%= food.name.toLowerCase() %>">
+                <div class="dish-card">
+                    <div class="dish-img-wrap">
+                        <span class="dish-badge"><%= stall.name %></span>
+                        <img src="<%= food.image %>" class="dish-img" alt="<%= food.name %>">
+                    </div>
+                    <div class="px-2">
+                        <div class="dish-name"><%= food.name %></div>
+                        <p class="dish-desc"><%= food.description %></p>
+                        <div class="dish-price mb-2">$<%= food.price.toFixed(2) %></div>
+                        <button class="btn btn-add-cart add-to-cart"
+                                data-name="<%= food.name %>"
+                                data-price="<%= food.price %>"
+                                data-image="<%= food.image %>">Add to cart</button>
+                    </div>
+                </div>
+            </div>
+            <% }) %>
+        <% }) %>
+    </div>
+</section>
 <!-- Footer -->
 <footer class="py-4">
     <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
@@ -501,41 +497,54 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/cart.js"></script>
 
-<!-- Search + category filtering -->
 <script>
+    const directory = document.getElementById('stallDirectory');
+    const menu = document.getElementById('stallMenu');
+    const allFoodItems = document.querySelectorAll('.menu-item');
     const searchInput = document.getElementById('searchInput');
-    const pills = document.querySelectorAll('.filter-pill');
-    const items = document.querySelectorAll('.menu-item');
-    const noResults = document.getElementById('noResults');
 
-    let activeCategory = 'All';
+    // Hide directory and show only the foods for the clicked stall
+    function openStall(stallId) {
+        directory.style.display = 'none';
+        menu.style.display = 'block';
 
-    function applyFilters() {
-        const term = searchInput.value.trim().toLowerCase();
-        let visible = 0;
-
-        items.forEach(item => {
-            const matchesCategory = activeCategory === 'All' || item.dataset.category === activeCategory;
-            const matchesSearch = item.dataset.name.includes(term);
-            const show = matchesCategory && matchesSearch;
-            item.style.display = show ? '' : 'none';
-            if (show) visible++;
+        // Hide every food item first
+        allFoodItems.forEach(item => {
+            item.style.display = 'none';
         });
 
-        noResults.style.display = visible === 0 ? 'block' : 'none';
+        // Find foods that match the stall's ID and show them
+        const selectedFoods = document.querySelectorAll('.stall-group-' + stallId);
+        selectedFoods.forEach(item => {
+            item.style.display = 'block';
+        });
+        
+        searchInput.value = ''; // Reset search bar
     }
 
-    pills.forEach(pill => {
-        pill.addEventListener('click', () => {
-            pills.forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
-            activeCategory = pill.dataset.category;
-            applyFilters();
-        });
+    // Go back to the main directory view
+    function goBackToStalls() {
+        directory.style.display = 'block';
+        menu.style.display = 'none';
+        searchInput.value = '';
+    }
+
+    // Basic search function across all stalls
+    searchInput.addEventListener('input', function() {
+        const term = this.value.trim().toLowerCase();
+        
+        if (term.length > 0) {
+            directory.style.display = 'none';
+            menu.style.display = 'block';
+            
+            allFoodItems.forEach(item => {
+                const match = item.dataset.name.includes(term);
+                item.style.display = match ? 'block' : 'none';
+            });
+        } else {
+            goBackToStalls(); // Go back if search is empty
+        }
     });
-
-    searchInput.addEventListener('input', applyFilters);
 </script>
-
 </body>
 </html>
