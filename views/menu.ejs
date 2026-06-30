@@ -20,7 +20,7 @@
 
         body {
             font-family: 'Poppins', sans-serif;
-            background-color: #ffffff;
+            background-color: #fcf9fa;
             color: #1a1a1a;
         }
 
@@ -28,9 +28,18 @@
             color: var(--brand);
         }
 
-        /* Navbar */
+        /* Navbar Sticky & Translucent */
+        .navbar {
+            backdrop-filter: blur(12px);
+            background-color: rgba(255, 255, 255, 0.9) !important;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(226, 55, 68, 0.08);
+        }
+
         .navbar-brand img {
-            height: 72px;
+            height: 56px;
         }
 
         .nav-link-custom {
@@ -111,62 +120,60 @@
         }
 
         .menu-search {
-            max-width: 720px;
+            max-width: 600px;
             margin: 0 auto;
         }
 
         .menu-search .form-control {
             border-radius: 12px;
             padding: 0.85rem 1.2rem;
-            border: none;
-            box-shadow: 0 8px 20px rgba(226, 55, 68, 0.12);
+            border: 1px solid #f2cfd4;
+            box-shadow: 0 8px 20px rgba(226, 55, 68, 0.08);
         }
 
         .menu-search .form-control:focus {
-            box-shadow: 0 0 0 0.2rem rgba(226, 55, 68, 0.15);
+            box-shadow: 0 0 0 0.25rem rgba(226, 55, 68, 0.15);
+            border-color: var(--brand);
         }
 
-        /* Category filter pills */
-        .filter-pill {
-            border: 1px solid var(--brand);
-            color: var(--brand);
+        /* Category Stall Cards */
+        .stall-card {
+            border: 1px solid rgba(226, 55, 68, 0.1);
             background: #fff;
-            border-radius: 30px;
-            padding: 0.4rem 1.3rem;
-            font-weight: 500;
-            font-size: 0.9rem;
-            transition: 0.2s;
+            border-radius: 16px;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease;
         }
 
-        .filter-pill:hover {
-            background: var(--pink-soft);
+        .stall-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(226, 55, 68, 0.1);
+            border-color: var(--brand);
         }
 
-        .filter-pill.active {
-            background: var(--brand);
-            color: #fff;
-        }
-
-        /* Dish cards (matches home page styling) */
+        /* Dish Card Grid Styling */
         .dish-card {
             border: 1px solid #f0d0d4;
-            border-radius: 16px 16px 90px 90px;
+            border-radius: 16px 16px 40px 40px;
             text-align: center;
-            transition: 0.3s;
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), box-shadow 0.3s ease, border-color 0.3s ease;
             background: #fff;
             height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
         }
 
         .dish-card:hover {
             transform: translateY(-8px);
-            box-shadow: 0 14px 28px rgba(226, 55, 68, 0.16);
+            box-shadow: 0 14px 28px rgba(226, 55, 68, 0.12);
             border-color: var(--brand);
         }
 
         .dish-img-wrap {
             background: var(--pink-soft);
             padding: 1.25rem 0 0.75rem;
-            border-radius: 16px 16px 50% 50%;
+            border-radius: 0 0 50% 50%;
             position: relative;
         }
 
@@ -176,7 +183,7 @@
             object-fit: cover;
             border-radius: 50%;
             border: 4px solid #fff;
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.12);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.1);
         }
 
         .dish-badge {
@@ -193,50 +200,169 @@
             border-radius: 20px;
         }
 
+        .dish-info-panel {
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
         .dish-name {
             font-weight: 600;
             font-size: 1rem;
-            margin-top: 0.75rem;
+            margin-top: 0.5rem;
         }
 
         .dish-desc {
             font-size: 0.78rem;
             color: #7a7a7a;
-            padding: 0 0.9rem;
-            min-height: 48px;
+            margin-bottom: 0.75rem;
+            flex-grow: 1;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .dish-price {
             color: var(--brand);
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 1.1rem;
         }
 
         .btn-add-cart {
             background: var(--brand);
             color: #fff;
-            font-size: 0.8rem;
+            font-size: 0.82rem;
             border: none;
-            padding: 0.45rem 1.3rem;
-            border-radius: 8px;
-            margin-bottom: 1.4rem;
-            font-weight: 500;
+            padding: 0.5rem 1.4rem;
+            border-radius: 25px;
+            margin: 0.5rem auto 1rem;
+            font-weight: 600;
             transition: 0.25s;
+            display: inline-block;
         }
 
         .btn-add-cart:hover {
             background: var(--brand-dark);
             color: #fff;
+            box-shadow: 0 4px 12px rgba(226, 55, 68, 0.2);
         }
 
-        .no-results {
-            display: none;
+        /* Choice options styling in Customize Modal */
+        .opt-radio-card {
+            border: 1px solid rgba(226, 55, 68, 0.15);
+            border-radius: 12px;
+            padding: 0.65rem 0.9rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s, border-color 0.2s;
+            background: #fff;
+            margin-bottom: 0.5rem;
+        }
+
+        .opt-radio-card:hover {
+            background: var(--pink-soft);
+        }
+
+        .opt-radio-card input:checked + span {
+            font-weight: 600;
+        }
+
+        .opt-radio-card.active {
+            border-color: var(--brand);
+            background: var(--pink-soft);
+        }
+
+        /* Cart drawer item styling */
+        .cart-item {
+            display: flex;
+            gap: 0.75rem;
+            align-items: flex-start;
+            padding: 0.9rem 0;
+            border-bottom: 1px solid #f0d0d4;
+        }
+
+        .cart-item img {
+            width: 52px;
+            height: 52px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 1px solid #f0d0d4;
+        }
+
+        .cart-item-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            line-height: 1.2;
+        }
+
+        .cart-item-options {
+            font-size: 0.72rem;
+            color: #6c757d;
+            margin: 0.15rem 0 0.4rem;
+            line-height: 1.4;
+        }
+
+        .cart-item-price {
+            color: var(--brand);
+            font-weight: 700;
+            font-size: 0.88rem;
+        }
+
+        .qty-box {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-top: 0.25rem;
+        }
+
+        .qty-box button {
+            border: 1px solid #e0a4ac;
+            background: #fff;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            line-height: 1;
+            font-weight: 700;
+            color: #1a1a1a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .qty-box button:hover {
+            background: var(--pink-soft);
+        }
+
+        .cart-remove {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 0.75rem;
+        }
+
+        .cart-remove:hover {
+            color: var(--brand);
+            text-decoration: underline;
+        }
+
+        .cart-empty {
             text-align: center;
-            color: #7a7a7a;
-            padding: 3rem 0;
+            color: #888;
+            padding: 4rem 1rem;
         }
 
-        /* Auth modals */
+        .cart-footer {
+            border-top: 1px solid #f0d0d4;
+            padding-top: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Auth Modals */
         .auth-modal .modal-content {
             border: none;
             border-radius: 18px;
@@ -280,11 +406,6 @@
             padding: 0.6rem 0.9rem;
         }
 
-        .auth-body .form-control:focus {
-            border-color: var(--brand);
-            box-shadow: 0 0 0 0.2rem rgba(226, 55, 68, 0.15);
-        }
-
         .btn-auth {
             background: var(--brand);
             color: #fff;
@@ -293,12 +414,6 @@
             padding: 0.65rem;
             font-weight: 600;
             width: 100%;
-            transition: 0.25s;
-        }
-
-        .btn-auth:hover {
-            background: var(--brand-dark);
-            color: #fff;
         }
 
         .auth-switch {
@@ -314,25 +429,6 @@
             cursor: pointer;
         }
 
-        .auth-switch a:hover {
-            text-decoration: underline;
-        }
-
-        /* Footer */
-        footer {
-            background: #1a1a1a;
-            color: #ddd;
-        }
-
-        footer a {
-            color: #ddd;
-            text-decoration: none;
-        }
-
-        footer a:hover {
-            color: var(--brand);
-        }
-
         /* Cart button + badge */
         .btn-cart {
             border: 1px solid var(--brand);
@@ -340,12 +436,8 @@
             border-radius: 8px;
             font-size: 1.1rem;
             line-height: 1;
-            padding: 0.35rem 0.6rem;
+            padding: 0.4rem 0.75rem;
             position: relative;
-        }
-
-        .btn-cart:hover {
-            background: var(--pink-soft);
         }
 
         .cart-badge {
@@ -356,100 +448,50 @@
             color: #fff;
             font-size: 0.68rem;
             font-weight: 700;
-            min-width: 20px;
-            height: 20px;
+            min-width: 18px;
+            height: 18px;
             border-radius: 50%;
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 0 5px;
+            padding: 0 4px;
         }
 
-        /* Cart drawer */
-        .cart-item {
+        /* Bottom Toast Alert */
+        .cart-toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1060;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 0.8rem 1.4rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25);
             display: flex;
-            gap: 0.75rem;
             align-items: center;
-            padding: 0.75rem 0;
-            border-bottom: 1px solid #f0d0d4;
+            gap: 0.6rem;
+            transform: translateY(150%);
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 0.88rem;
+            pointer-events: none;
         }
 
-        .cart-item img {
-            width: 52px;
-            height: 52px;
-            object-fit: cover;
-            border-radius: 10px;
+        .cart-toast.show {
+            transform: translateY(0);
         }
 
-        .cart-item-name {
-            font-weight: 600;
-            font-size: 0.9rem;
+        /* Footer */
+        footer {
+            background: #1a1a1a;
+            color: #ddd;
         }
 
-        .cart-item-price {
-            color: var(--brand);
-            font-weight: 600;
-            font-size: 0.85rem;
-        }
-
-        .qty-box {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-top: 0.3rem;
-        }
-
-        .qty-box button {
-            border: 1px solid #e0a4ac;
-            background: #fff;
-            width: 26px;
-            height: 26px;
-            border-radius: 6px;
-            line-height: 1;
-            font-weight: 700;
-            color: #1a1a1a;
-        }
-
-        .qty-box button:hover {
-            background: var(--pink-soft);
-        }
-
-        .cart-remove {
-            background: none;
-            border: none;
-            color: #7a7a7a;
-            font-size: 0.78rem;
-        }
-
-        .cart-remove:hover {
-            color: var(--brand);
-            text-decoration: underline;
-        }
-
-        .cart-empty {
+        .no-results {
             text-align: center;
-            color: #7a7a7a;
-            padding: 3rem 1rem;
-        }
-
-        .cart-footer {
-            border-top: 1px solid #f0d0d4;
-            padding-top: 1rem;
-            margin-top: 0.5rem;
-        }
-
-        .btn-checkout {
-            background: var(--brand);
-            color: #fff;
-            border: none;
-            border-radius: 10px;
-            padding: 0.6rem;
-            font-weight: 600;
-        }
-
-        .btn-checkout:hover {
-            background: var(--brand-dark);
-            color: #fff;
+            color: #888;
+            padding: 4rem 1rem;
+            display: none;
         }
     </style>
 </head>
@@ -457,9 +499,9 @@
 <body>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg bg-white py-3 shadow-sm">
+    <nav class="navbar navbar-expand-lg py-2 shadow-sm">
         <div class="container">
-            <a class="navbar-brand fw-bold fs-3" href="/">
+            <a class="navbar-brand fw-bold fs-3" href="#" onclick="goBackToStalls(); return false;">
                 <img src="<%= images.logo %>" alt="FoodHub"
                     onerror="this.style.display='none';document.getElementById('brandText').style.display='inline';">
                 <span id="brandText" style="display:none;">food<span class="brand-red">hub</span></span>
@@ -467,14 +509,14 @@
 
             <div class="d-none d-lg-flex flex-grow-1 justify-content-center">
                 <a href="/" class="nav-link-custom">Home</a>
-                <a href="/menu" class="nav-link-custom">Menu</a>
-                <a href="#popular" class="nav-link-custom">Categories</a>
+                <a href="#" class="nav-link-custom active" onclick="goBackToStalls(); return false;">Menu</a>
+                <a href="#popular" class="nav-link-custom" onclick="alert('Stalls filter is below!'); return false;">Categories</a>
             </div>
 
             <div class="d-flex align-items-center">
                 <button type="button" class="btn btn-cart position-relative me-2" id="cartButton"
                     aria-label="Open cart">
-                    &#128722;<span class="cart-badge" id="cartBadge">0</span>
+                    🛒<span class="cart-badge" id="cartBadge">0</span>
                 </button>
                 <button type="button" class="btn btn-login me-2" data-bs-toggle="modal"
                     data-bs-target="#loginModal">Login</button>
@@ -489,90 +531,157 @@
     <section class="container mt-4">
         <div class="menu-hero p-4 p-md-5">
             <h1>Explore Our <span class="brand-red">Menu</span></h1>
-            <p class="tagline mt-2 mb-4">Freshly prepared meals delivered to your doorstep.</p>
+            <p class="tagline mt-2 mb-4">Freshly prepared meals for you to collect.</p>
 
             <div class="menu-search">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search for food...">
+                <input type="text" id="searchInput" class="form-control" placeholder="Search for food (e.g. burger, noodles, tea)...">
             </div>
         </div>
     </section>
 
 
-    <!-- Menu Grid -->
-    <section class="container mt-4" id="stallDirectory">
-        <h3 class="mb-3 fw-bold">Select a Stall</h3>
+    <!-- Stall Directory -->
+    <section class="container mt-5" id="stallDirectory">
+        <h4 class="mb-4 fw-bold">Select a Stall</h4>
         <div class="row g-3">
             <% stalls.forEach(stall=> { %>
-                <div class="col-6 col-md-4">
-                    <div class="card text-center p-4 shadow-sm" style="cursor: pointer; border-radius: 16px;"
+                <div class="col-12 col-md-4">
+                    <div class="stall-card text-center p-4 shadow-sm" style="cursor: pointer;"
                         onclick="openStall('<%= stall.id %>')">
-                        <h1 class="display-4">
+                        <h1 class="display-3 mb-2">
                             <%= stall.emoji %>
                         </h1>
-                        <h5 class="mt-2 fw-bold">
+                        <h5 class="fw-bold mb-1">
                             <%= stall.name %>
                         </h5>
+                        <p class="text-muted small mb-0"><%= stall.description %></p>
                     </div>
                 </div>
-                <% }) %>
+            <% }) %>
         </div>
     </section>
 
+    <!-- Stall Menu Grid -->
     <section class="container py-5" id="stallMenu" style="display: none;">
-        <button class="btn btn-outline-dark mb-4" onclick="goBackToStalls()">← Back to Stalls</button>
-        <div class="row g-3" id="menuGrid">
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <button class="btn btn-outline-dark px-3 py-1.5 rounded-3 fw-medium" onclick="goBackToStalls()">← Back to Stalls</button>
+            <h4 class="fw-bold mb-0" id="currentStallTitle">Menu</h4>
+        </div>
+
+        <div class="row g-4" id="menuGrid">
             <% stalls.forEach(stall=> { %>
                 <% stall.foods.forEach(food=> { %>
-                    <div class="col-6 col-md-4 col-lg-3 menu-item stall-group-<%= stall.id %>"
+                    <div class="col-12 col-sm-6 col-md-4 col-lg-3 menu-item stall-group-<%= stall.id %>"
                         data-name="<%= food.name.toLowerCase() %>">
                         <div class="dish-card">
                             <div class="dish-img-wrap">
                                 <span class="dish-badge">
                                     <%= stall.name %>
                                 </span>
-                                <img src="<%= food.image %>" class="dish-img" alt="<%= food.name %>">
+                                <img src="<%= food.image || 'https://img.icons8.com/color/96/hamburger.png' %>" class="dish-img" alt="<%= food.name %>" onerror="this.src='https://img.icons8.com/color/96/hamburger.png';">
                             </div>
-                            <div class="px-2">
+                            <div class="dish-info-panel">
                                 <div class="dish-name">
                                     <%= food.name %>
                                 </div>
                                 <p class="dish-desc">
                                     <%= food.description %>
                                 </p>
-                                <div class="dish-price mb-2">$<%= food.price.toFixed(2) %>
+                                <div class="d-flex align-items-center justify-content-between mt-auto">
+                                    <div class="dish-price">$<%= food.price.toFixed(2) %></div>
+                                    
+                                    <!-- Options stringified directly into button dataset -->
+                                    <button class="btn btn-add-cart add-to-cart mb-0 py-1.5 px-3" 
+                                        data-name="<%= food.name %>" 
+                                        data-price="<%= food.price %>" 
+                                        data-image="<%= food.image %>"
+                                        data-stall="<%= stall.name %>"
+                                        data-options='<%= JSON.stringify(food.options || null) %>'>
+                                        Add to cart
+                                    </button>
                                 </div>
-                                <button class="btn btn-add-cart add-to-cart" data-name="<%= food.name %>"
-                                    data-price="<%= food.price %>" data-image="<%= food.image %>">Add to cart</button>
                             </div>
                         </div>
                     </div>
-                    <% }) %>
-                        <% }) %>
+                <% }) %>
+            <% }) %>
+        </div>
+
+        <div id="noResultsBlock" class="no-results mt-4">
+            <h1 class="display-4">🔍</h1>
+            <h5 class="fw-semibold mt-3">No dishes match your search</h5>
+            <p class="text-muted">Try searching for other keywords, or clear the search field.</p>
         </div>
     </section>
+
     <!-- Footer -->
-    <footer class="py-4">
+    <footer class="py-4 mt-5">
         <div class="container text-center">
             <span>&copy; 2026 FoodHub. All rights reserved.</span>
         </div>
     </footer>
 
+    <!-- Customize Item Modal -->
+    <div class="modal fade" id="customizeModal" tabindex="-1" aria-labelledby="customizeModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 rounded-4 overflow-hidden shadow-lg">
+                <div class="modal-header border-0 bg-light p-3 position-relative">
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="d-flex align-items-center gap-3">
+                        <img id="modalFoodImg" src="" alt="" class="rounded-3 shadow-sm" style="width: 64px; height: 64px; object-fit: cover;">
+                        <div>
+                            <h5 class="modal-title fw-bold" id="customizeModalLabel">Customize Item</h5>
+                            <div class="text-muted small" id="modalFoodStall">Stall Name</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-body p-4" style="max-height: 60vh; overflow-y: auto;">
+                    <form id="customizeForm">
+                        <input type="hidden" id="modalFoodName">
+
+                        <!-- Size selection -->
+                        <div class="mb-4 d-none" id="sizeGroup">
+                            <h6 class="fw-bold mb-2">Select Size <span class="text-danger">*</span></h6>
+                            <div class="d-flex flex-column gap-2" id="sizeOptions"></div>
+                        </div>
+
+                        <!-- Spicy level selection -->
+                        <div class="mb-4 d-none" id="spicyGroup">
+                            <h6 class="fw-bold mb-2">Spice Level <span class="text-danger">*</span></h6>
+                            <div class="d-flex flex-wrap gap-2" id="spicyOptions"></div>
+                        </div>
+
+                        <!-- Add-ons selection -->
+                        <div class="mb-3 d-none" id="addonsGroup">
+                            <h6 class="fw-bold mb-2">Add-ons (Optional)</h6>
+                            <div class="d-flex flex-column gap-2" id="addonsOptions"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0 p-3 bg-light d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none" id="modalQtyMinus">-</button>
+                        <span class="fw-bold fs-5 px-1" id="modalQty">1</span>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none" id="modalQtyPlus">+</button>
+                    </div>
+                    <button type="button" class="btn btn-danger px-4 py-2 border-0" id="btnConfirmAdd" style="background-color: var(--brand);">Add to Cart - $0.00</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Login Modal -->
     <div class="modal fade auth-modal" id="loginModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-
                 <div class="auth-header">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal"
                         aria-label="Close"></button>
-                    <img src="<%= images.logo %>" alt="FoodHub">
-                    <h5>Welcome Back</h5>
+                    <h5 class="fw-bold text-dark fs-4">Welcome Back</h5>
                     <p>Log in to continue ordering</p>
                 </div>
-
                 <div class="auth-body">
-                    <!-- TODO: hook up to backend later (action="/login" method="POST") -->
-                    <form>
+                    <form onsubmit="event.preventDefault(); alert('Login simulated!');">
                         <div class="mb-3">
                             <label class="form-label">Email</label>
                             <input type="email" class="form-control" placeholder="you@example.com" required>
@@ -581,24 +690,9 @@
                             <label class="form-label">Password</label>
                             <input type="password" class="form-control" placeholder="Enter your password" required>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="rememberMe">
-                                <label class="form-check-label" for="rememberMe" style="font-size:0.82rem;">Remember
-                                    me</label>
-                            </div>
-                            <a href="#" style="font-size:0.82rem; color:var(--brand); text-decoration:none;">Forgot
-                                password?</a>
-                        </div>
                         <button type="submit" class="btn-auth">Login</button>
                     </form>
-
-                    <p class="auth-switch">
-                        Don't have an account?
-                        <a data-bs-toggle="modal" data-bs-target="#signupModal" data-bs-dismiss="modal">Sign Up</a>
-                    </p>
                 </div>
-
             </div>
         </div>
     </div>
@@ -607,18 +701,14 @@
     <div class="modal fade auth-modal" id="signupModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-
                 <div class="auth-header">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal"
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal"
                         aria-label="Close"></button>
-                    <img src="<%= images.logo %>" alt="FoodHub">
-                    <h5>Create Account</h5>
+                    <h5 class="fw-bold text-dark fs-4">Create Account</h5>
                     <p>Join FoodHub and start ordering</p>
                 </div>
-
                 <div class="auth-body">
-                    <!-- TODO: hook up to backend later (action="/signup" method="POST") -->
-                    <form>
+                    <form onsubmit="event.preventDefault(); alert('Signup simulated!');">
                         <div class="mb-3">
                             <label class="form-label">Full Name</label>
                             <input type="text" class="form-control" placeholder="Your name" required>
@@ -627,96 +717,477 @@
                             <label class="form-label">Email</label>
                             <input type="email" class="form-control" placeholder="you@example.com" required>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label">Password</label>
-                            <input type="password" class="form-control" placeholder="Create a password" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Confirm Password</label>
-                            <input type="password" class="form-control" placeholder="Re-enter your password" required>
-                        </div>
                         <button type="submit" class="btn-auth">Sign Up</button>
                     </form>
-
-                    <p class="auth-switch">
-                        Already have an account?
-                        <a data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal">Login</a>
-                    </p>
                 </div>
-
             </div>
         </div>
     </div>
 
     <!-- Cart Drawer -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="cartDrawer" aria-labelledby="cartDrawerLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="cartDrawerLabel">Your order</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        <div class="offcanvas-header border-bottom">
+            <h5 class="offcanvas-title fw-bold" id="cartDrawerLabel">Your Order</h5>
+            <button type="button" class="btn-close shadow-none" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body d-flex flex-column">
-            <div id="cartItems" class="flex-grow-1"></div>
-            <div class="cart-footer">
+            <div id="cartItems" class="flex-grow-1" style="overflow-y: auto;"></div>
+            <div class="cart-footer mt-auto pt-3">
                 <div class="d-flex justify-content-between mb-3">
                     <span class="fw-semibold">Subtotal</span>
-                    <span class="fw-bold" id="cartSubtotal">$0.00</span>
+                    <span class="fw-bold fs-5 text-dark" id="cartSubtotal">$0.00</span>
                 </div>
-                <a href="/checkout" class="btn btn-checkout w-100">Go to checkout</a>
+                <a href="/checkout" class="btn btn-checkout w-100 border-0 d-flex justify-content-center align-items-center" style="background-color: var(--brand); color:#fff; padding: 0.65rem; border-radius:10px; font-weight:600; text-decoration:none;">Go to checkout</a>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="/js/cart.js"></script>
+    <!-- Toast Container -->
+    <div class="cart-toast" id="cartToast">
+        <span>🛒</span>
+        <span id="cartToastText">Item added to cart</span>
+    </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Client-side Cart & Interaction Logic -->
     <script>
         const directory = document.getElementById('stallDirectory');
         const menu = document.getElementById('stallMenu');
+        const currentStallTitle = document.getElementById('currentStallTitle');
         const allFoodItems = document.querySelectorAll('.menu-item');
         const searchInput = document.getElementById('searchInput');
+        const noResultsBlock = document.getElementById('noResultsBlock');
 
-        // Hide directory and show only the foods for the clicked stall
+        let cart = [];
+        let activeFood = null;
+        let currentModalQty = 1;
+        let activeStallId = null;
+
+        let customizeModal;
+        let cartDrawer;
+
+        // DOM elements
+        const cartBadge = document.getElementById('cartBadge');
+        const cartButton = document.getElementById('cartButton');
+        const cartItems = document.getElementById('cartItems');
+        const cartSubtotal = document.getElementById('cartSubtotal');
+        const cartToast = document.getElementById('cartToast');
+        const cartToastText = document.getElementById('cartToastText');
+
+        // Modal Elements
+        const customizeModalEl = document.getElementById('customizeModal');
+        const modalFoodImg = document.getElementById('modalFoodImg');
+        const modalFoodName = document.getElementById('modalFoodName');
+        const modalFoodStall = document.getElementById('modalFoodStall');
+        const sizeGroup = document.getElementById('sizeGroup');
+        const sizeOptions = document.getElementById('sizeOptions');
+        const spicyGroup = document.getElementById('spicyGroup');
+        const spicyOptions = document.getElementById('spicyOptions');
+        const addonsGroup = document.getElementById('addonsGroup');
+        const addonsOptions = document.getElementById('addonsOptions');
+        const modalQty = document.getElementById('modalQty');
+        const btnConfirmAdd = document.getElementById('btnConfirmAdd');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            customizeModal = new bootstrap.Modal(customizeModalEl);
+            cartDrawer = new bootstrap.Offcanvas(document.getElementById('cartDrawer'));
+
+            // Load Cart state
+            const savedCart = localStorage.getItem('foodhub_cart');
+            if (savedCart) {
+                try {
+                    cart = JSON.parse(savedCart);
+                } catch(e) {
+                    cart = [];
+                }
+            }
+
+            cartButton.addEventListener('click', () => {
+                cartDrawer.show();
+            });
+
+            // Modal quantity adjusters
+            document.getElementById('modalQtyMinus').addEventListener('click', () => {
+                if (currentModalQty > 1) {
+                    currentModalQty--;
+                    modalQty.textContent = currentModalQty;
+                    calculateModalTotal();
+                }
+            });
+
+            document.getElementById('modalQtyPlus').addEventListener('click', () => {
+                currentModalQty++;
+                modalQty.textContent = currentModalQty;
+                calculateModalTotal();
+            });
+
+            document.getElementById('customizeForm').addEventListener('change', calculateModalTotal);
+            btnConfirmAdd.addEventListener('click', confirmModalAdd);
+
+            updateCart();
+        });
+
+        // Toggle stall view
         function openStall(stallId) {
+            activeStallId = stallId;
             directory.style.display = 'none';
             menu.style.display = 'block';
+            noResultsBlock.style.display = 'none';
 
-            // Hide every food item first
+            let titleText = "Menu";
+            if (stallId === 'western') titleText = "🍔 Western Stall";
+            else if (stallId === 'chickenrice') titleText = "🍗 Chicken Rice Stall";
+            else if (stallId === 'drinks') titleText = "☕ Drinks Stall";
+            else if (stallId === 'malay') titleText = "🍱 Malay Stall";
+            else if (stallId === 'chinese') titleText = "🍜 Chinese Stall";
+            else if (stallId === 'dessert') titleText = "🧁 Dessert Stall";
+
+            currentStallTitle.textContent = titleText;
+
             allFoodItems.forEach(item => {
-                item.style.display = 'none';
+                const matches = item.classList.contains('stall-group-' + stallId);
+                item.style.display = matches ? 'block' : 'none';
             });
 
-            // Find foods that match the stall's ID and show them
-            const selectedFoods = document.querySelectorAll('.stall-group-' + stallId);
-            selectedFoods.forEach(item => {
-                item.style.display = 'block';
-            });
-
-            searchInput.value = ''; // Reset search bar
+            searchInput.value = '';
         }
 
-        // Go back to the main directory view
         function goBackToStalls() {
+            activeStallId = null;
             directory.style.display = 'block';
             menu.style.display = 'none';
             searchInput.value = '';
         }
 
-        // Basic search function across all stalls
+        // Context-aware search mechanism
         searchInput.addEventListener('input', function () {
             const term = this.value.trim().toLowerCase();
 
             if (term.length > 0) {
                 directory.style.display = 'none';
                 menu.style.display = 'block';
+                currentStallTitle.textContent = activeStallId 
+                    ? `Searching in ${currentStallTitle.textContent.split(' ').slice(1).join(' ')}` 
+                    : "Search Results";
 
+                let matchesCount = 0;
                 allFoodItems.forEach(item => {
-                    const match = item.dataset.name.includes(term);
-                    item.style.display = match ? 'block' : 'none';
+                    const matchesSearch = item.dataset.name.includes(term);
+                    const matchesStall = activeStallId ? item.classList.contains('stall-group-' + activeStallId) : true;
+
+                    if (matchesSearch && matchesStall) {
+                        item.style.display = 'block';
+                        matchesCount++;
+                    } else {
+                        item.style.display = 'none';
+                    }
                 });
+
+                noResultsBlock.style.display = matchesCount === 0 ? 'block' : 'none';
             } else {
-                goBackToStalls(); // Go back if search is empty
+                if (activeStallId) {
+                    openStall(activeStallId);
+                } else {
+                    goBackToStalls();
+                }
             }
         });
+
+        // Intercept clicks on grid buttons and check for options configuration
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('add-to-cart')) {
+                const btn = e.target;
+                const name = btn.dataset.name;
+                const price = parseFloat(btn.dataset.price);
+                const image = btn.dataset.image;
+                const stall = btn.dataset.stall;
+                
+                let options = null;
+                try {
+                    options = JSON.parse(btn.dataset.options);
+                } catch(err) {
+                    options = null;
+                }
+
+                // If food item has configurable options, open customizing modal
+                const hasChoices = options && (options.sizes || options.spicy || options.addons);
+
+                if (hasChoices) {
+                    triggerCustomizeModal({ name, price, image, stall, options });
+                } else {
+                    addToCart(name, price, image, 1, { size: null, spicy: null, addons: [] });
+                }
+            }
+        });
+
+        function triggerCustomizeModal(food) {
+            activeFood = food;
+            currentModalQty = 1;
+            modalQty.textContent = '1';
+            modalFoodImg.src = food.image || 'https://img.icons8.com/color/96/hamburger.png';
+            modalFoodImg.alt = food.name;
+            modalFoodName.value = food.name;
+            document.getElementById('customizeModalLabel').textContent = `Customize ${food.name}`;
+            modalFoodStall.textContent = food.stall;
+
+            const opt = food.options;
+
+            // Render Sizes
+            if (opt.sizes && opt.sizes.length > 0) {
+                sizeGroup.classList.remove('d-none');
+                sizeOptions.innerHTML = opt.sizes.map((s, idx) => `
+                    <label class="opt-radio-card ${idx === 0 ? 'active' : ''}">
+                        <div>
+                            <input type="radio" name="size" value="${s.name}" data-price="${s.priceDiff}" ${idx === 0 ? 'checked' : ''} class="form-check-input me-2">
+                            <span>${s.name}</span>
+                        </div>
+                        <span class="text-muted small">${s.priceDiff > 0 ? `+$${s.priceDiff.toFixed(2)}` : 'Standard'}</span>
+                    </label>
+                `).join('');
+
+                sizeOptions.querySelectorAll('.opt-radio-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        sizeOptions.querySelectorAll('.opt-radio-card').forEach(c => c.classList.remove('active'));
+                        this.classList.add('active');
+                    });
+                });
+            } else {
+                sizeGroup.classList.add('d-none');
+                sizeOptions.innerHTML = '';
+            }
+
+            // Render Spice levels
+            if (opt.spicy && opt.spicy.length > 0) {
+                spicyGroup.classList.remove('d-none');
+                spicyOptions.innerHTML = opt.spicy.map((sp, idx) => `
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-1.5 me-2 mb-2 spicy-btn-pill ${idx === 0 ? 'active btn-danger text-white' : ''}" data-value="${sp.name}" onclick="selectSpicyPill(this)">
+                        ${sp.name}
+                    </button>
+                `).join('') + `<input type="hidden" name="spicy" id="selectedSpicy" value="${opt.spicy[0].name}">`;
+            } else {
+                spicyGroup.classList.add('d-none');
+                spicyOptions.innerHTML = '';
+            }
+
+            // Render Add-ons
+            if (opt.addons && opt.addons.length > 0) {
+                addonsGroup.classList.remove('d-none');
+                addonsOptions.innerHTML = opt.addons.map(a => `
+                    <label class="opt-radio-card">
+                        <div>
+                            <input type="checkbox" name="addons" value="${a.name}" data-price="${a.priceDiff}" class="form-check-input me-2">
+                            <span>${a.name}</span>
+                        </div>
+                        <span class="text-muted small">+$${a.priceDiff.toFixed(2)}</span>
+                    </label>
+                `).join('');
+
+                addonsOptions.querySelectorAll('.opt-radio-card').forEach(card => {
+                    card.addEventListener('click', function() {
+                        const cb = this.querySelector('input[type="checkbox"]');
+                        setTimeout(() => {
+                            if (cb.checked) {
+                                this.classList.add('active');
+                            } else {
+                                this.classList.remove('active');
+                            }
+                        }, 10);
+                    });
+                });
+            } else {
+                addonsGroup.classList.add('d-none');
+                addonsOptions.innerHTML = '';
+            }
+
+            calculateModalTotal();
+            customizeModal.show();
+        }
+
+        window.selectSpicyPill = function(element) {
+            spicyOptions.querySelectorAll('.spicy-btn-pill').forEach(btn => {
+                btn.classList.remove('active', 'btn-danger', 'text-white');
+            });
+            element.classList.add('active', 'btn-danger', 'text-white');
+            document.getElementById('selectedSpicy').value = element.dataset.value;
+            calculateModalTotal();
+        };
+
+        function calculateModalTotal() {
+            if (!activeFood) return;
+
+            let unitPrice = activeFood.price;
+
+            const sizeChecked = sizeOptions.querySelector('input[name="size"]:checked');
+            if (sizeChecked) {
+                unitPrice += parseFloat(sizeChecked.dataset.price);
+            }
+
+            const addonsChecked = addonsOptions.querySelectorAll('input[name="addons"]:checked');
+            addonsChecked.forEach(cb => {
+                unitPrice += parseFloat(cb.dataset.price);
+            });
+
+            const total = unitPrice * currentModalQty;
+            btnConfirmAdd.textContent = `Add to Cart - $${total.toFixed(2)}`;
+        }
+
+        function confirmModalAdd() {
+            if (!activeFood) return;
+
+            const selectedOptions = {
+                size: null,
+                spicy: null,
+                addons: []
+            };
+
+            const sizeChecked = sizeOptions.querySelector('input[name="size"]:checked');
+            if (sizeChecked) {
+                selectedOptions.size = sizeChecked.value;
+            }
+
+            const selectedSpicyInput = document.getElementById('selectedSpicy');
+            if (selectedSpicyInput) {
+                selectedOptions.spicy = selectedSpicyInput.value;
+            }
+
+            const addonsChecked = addonsOptions.querySelectorAll('input[name="addons"]:checked');
+            addonsChecked.forEach(cb => {
+                selectedOptions.addons.push(cb.value);
+            });
+
+            // Calculate exact cost for item + configuration
+            let finalUnitPrice = activeFood.price;
+            if (selectedOptions.size && activeFood.options.sizes) {
+                const sz = activeFood.options.sizes.find(s => s.name === selectedOptions.size);
+                if (sz) finalUnitPrice += sz.priceDiff;
+            }
+            if (selectedOptions.addons.length > 0 && activeFood.options.addons) {
+                selectedOptions.addons.forEach(addonName => {
+                    const ad = activeFood.options.addons.find(a => a.name === addonName);
+                    if (ad) finalUnitPrice += ad.priceDiff;
+                });
+            }
+
+            addToCart(activeFood.name, finalUnitPrice, activeFood.image, currentModalQty, selectedOptions);
+            customizeModal.hide();
+        }
+
+        // Helpers to manage cart operations
+        function generateCartKey(name, options) {
+            let key = name;
+            if (options.size) key += `-${options.size}`;
+            if (options.spicy) key += `-${options.spicy}`;
+            if (options.addons && options.addons.length > 0) {
+                key += `-${options.addons.sort().join(',')}`;
+            }
+            return key;
+        }
+
+        function addToCart(name, price, image, qty, options) {
+            const cartKey = generateCartKey(name, options);
+            const existingIndex = cart.findIndex(item => item.key === cartKey);
+
+            if (existingIndex > -1) {
+                cart[existingIndex].qty += qty;
+            } else {
+                cart.push({
+                    key: cartKey,
+                    name: name,
+                    price: price, // Store customized price as standard 'price' key
+                    image: image || 'https://img.icons8.com/color/96/hamburger.png',
+                    qty: qty,
+                    options: options
+                });
+            }
+
+            updateCart();
+            showToast(`${qty}x ${name} added to cart`);
+        }
+
+        function updateCart() {
+            localStorage.setItem('foodhub_cart', JSON.stringify(cart));
+
+            if (!cartItems) return;
+
+            if (cart.length === 0) {
+                if (cartBadge) cartBadge.style.display = 'none';
+                cartItems.innerHTML = '<div class="cart-empty">Your cart is empty</div>';
+                if (cartSubtotal) cartSubtotal.textContent = '$0.00';
+                return;
+            }
+
+            let totalQty = 0;
+            let subtotal = 0;
+            cartItems.innerHTML = '';
+
+            cart.forEach((item, index) => {
+                totalQty += item.qty;
+                subtotal += item.price * item.qty;
+
+                let optionsHtml = '';
+                const opts = [];
+                if (item.options.size) opts.push(`Size: ${item.options.size}`);
+                if (item.options.spicy) opts.push(`Spicy: ${item.options.spicy}`);
+                if (item.options.addons && item.options.addons.length > 0) {
+                    opts.push(`Add-ons: ${item.options.addons.join(', ')}`);
+                }
+
+                if (opts.length > 0) {
+                    optionsHtml = `<div class="cart-item-options text-muted">${opts.join(' | ')}</div>`;
+                }
+
+                const itemEl = document.createElement('div');
+                itemEl.className = 'cart-item';
+                itemEl.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}">
+                    <div class="flex-grow-1 ms-2">
+                        <div class="cart-item-name fw-semibold">${item.name}</div>
+                        ${optionsHtml}
+                        <div class="cart-item-price">$${item.price.toFixed(2)}</div>
+                        <div class="qty-box">
+                            <button onclick="changeQty(${index}, -1)">-</button>
+                            <span class="small fw-semibold">${item.qty}</span>
+                            <button onclick="changeQty(${index}, 1)">+</button>
+                        </div>
+                    </div>
+                    <button class="cart-remove ms-auto" onclick="removeItem(${index})">Remove</button>
+                `;
+                cartItems.appendChild(itemEl);
+            });
+
+            if (cartBadge) {
+                cartBadge.style.display = 'flex';
+                cartBadge.textContent = totalQty;
+            }
+            if (cartSubtotal) {
+                cartSubtotal.textContent = `$${subtotal.toFixed(2)}`;
+            }
+        }
+
+        window.changeQty = function(index, diff) {
+            cart[index].qty += diff;
+            if (cart[index].qty <= 0) {
+                cart.splice(index, 1);
+            }
+            updateCart();
+        };
+
+        window.removeItem = function(index) {
+            cart.splice(index, 1);
+            updateCart();
+        };
+
+        let toastTimeout;
+        function showToast(text) {
+            if (!cartToast) return;
+            cartToastText.textContent = text;
+            cartToast.classList.add('show');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                cartToast.classList.remove('show');
+            }, 3000);
+        }
     </script>
 </body>
 

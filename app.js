@@ -18,7 +18,7 @@ app.get('/', (req, res) => {
 });
 
 app.get('/menu', (req, res) => {
-    // 1. Define the stalls data
+    // Stalls data (Mala Stall has been completely removed)
     const stalls = [
         {
             id: 'western',
@@ -26,24 +26,54 @@ app.get('/menu', (req, res) => {
             emoji: '🍔',
             description: 'Burgers, pasta, grills & more',
             foods: [
-                { name: 'Burger', description: 'Juicy beef or chicken burger', price: 6.50, image: '', badge: 'bestseller' },
-                { name: 'Pasta', description: 'Creamy or tomato base pasta', price: 7.90, image: '', badge: '' },
-                { name: 'Chicken Chop', description: 'Grilled chicken with black pepper sauce', price: 8.50, image: '', badge: 'new' },
-                { name: 'Fish & Chips', description: 'Crispy battered fish with golden fries', price: 9.00, image: '', badge: '' },
-            ]
-        },
-        {
-            id: 'mala',
-            name: 'Mala Stall',
-            emoji: '🌶️',
-            description: 'Spicy mala hotpot with fresh ingredients',
-            foods: [
-                { name: 'Beef Slices', description: 'Tender beef in spicy mala broth', price: 9.90, image: '', badge: 'spicy' },
-                { name: 'Prawn', description: 'Fresh prawns tossed in mala sauce', price: 11.00, image: '', badge: 'bestseller' },
-                { name: 'Tofu', description: 'Soft tofu in rich mala soup base', price: 6.00, image: '', badge: '' },
-                { name: 'Mushroom', description: 'Assorted mushrooms in spicy broth', price: 5.50, image: '', badge: '' },
-                { name: 'Vegetables', description: 'Fresh seasonal greens', price: 4.50, image: '', badge: '' },
-                { name: 'Pork Belly', description: 'Fatty pork belly in mala sauce', price: 8.50, image: '', badge: 'spicy' },
+                { 
+                    name: 'Burger', 
+                    description: 'Juicy beef or chicken burger', 
+                    price: 6.50, 
+                    image: '', 
+                    badge: 'bestseller',
+                    options: {
+                        sizes: [{ name: 'Regular', priceDiff: 0 }, { name: 'Double Patty', priceDiff: 2.50 }],
+                        spicy: null,
+                        addons: [{ name: 'Extra Cheese', priceDiff: 0.50 }, { name: 'Fried Egg', priceDiff: 1.00 }, { name: 'Bacon Strip', priceDiff: 1.50 }]
+                    }
+                },
+                { 
+                    name: 'Pasta', 
+                    description: 'Creamy or tomato base pasta', 
+                    price: 7.90, 
+                    image: '/images/spaghetti.png', 
+                    badge: '',
+                    options: {
+                        sizes: [{ name: 'Regular Portion', priceDiff: 0 }, { name: 'Large Portion', priceDiff: 1.80 }],
+                        spicy: [{ name: 'Non-Spicy' }, { name: 'Mild' }, { name: 'Spicy' }],
+                        addons: [{ name: 'Extra Sauce', priceDiff: 0.80 }, { name: 'Add Grilled Chicken', priceDiff: 2.00 }]
+                    }
+                },
+                { 
+                    name: 'Chicken Chop', 
+                    description: 'Grilled chicken with black pepper sauce', 
+                    price: 8.50, 
+                    image: '', 
+                    badge: 'new',
+                    options: {
+                        sizes: [{ name: 'Regular', priceDiff: 0 }, { name: 'Double Chop', priceDiff: 3.50 }],
+                        spicy: null,
+                        addons: [{ name: 'Extra Pepper Sauce', priceDiff: 0.50 }, { name: 'Add Sunny Side Egg', priceDiff: 1.00 }]
+                    }
+                },
+                { 
+                    name: 'Fish & Chips', 
+                    description: 'Crispy battered fish with golden fries', 
+                    price: 9.00, 
+                    image: '', 
+                    badge: '',
+                    options: {
+                        sizes: [{ name: 'Regular', priceDiff: 0 }, { name: 'Giant Haddock', priceDiff: 3.00 }],
+                        spicy: null,
+                        addons: [{ name: 'Extra Tartar Sauce', priceDiff: 0.50 }, { name: 'Cheese Dip', priceDiff: 1.00 }]
+                    }
+                },
             ]
         },
         {
@@ -52,9 +82,42 @@ app.get('/menu', (req, res) => {
             emoji: '🍗',
             description: 'Classic Hainanese chicken rice',
             foods: [
-                { name: 'Roasted Chicken Rice', description: 'Fragrant rice with roasted chicken', price: 5.50, image: '', badge: 'bestseller' },
-                { name: 'Steam Chicken Rice', description: 'Silky steamed chicken with ginger sauce', price: 5.00, image: '', badge: '' },
-                { name: 'Drumstick Rice', description: 'Juicy drumstick with fragrant rice', price: 6.00, image: '', badge: 'new' },
+                { 
+                    name: 'Roasted Chicken Rice', 
+                    description: 'Fragrant rice with roasted chicken', 
+                    price: 5.50, 
+                    image: '', 
+                    badge: 'bestseller',
+                    options: {
+                        sizes: [{ name: 'Regular Portion', priceDiff: 0 }, { name: 'Large Rice & Chicken', priceDiff: 1.50 }],
+                        spicy: null,
+                        addons: [{ name: 'Braised Egg', priceDiff: 0.80 }, { name: 'Add Chicken Liver/Gizzard', priceDiff: 1.00 }]
+                    }
+                },
+                { 
+                    name: 'Steam Chicken Rice', 
+                    description: 'Silky steamed chicken with ginger sauce', 
+                    price: 5.00, 
+                    image: '', 
+                    badge: '',
+                    options: {
+                        sizes: [{ name: 'Regular Portion', priceDiff: 0 }, { name: 'Large Rice & Chicken', priceDiff: 1.50 }],
+                        spicy: null,
+                        addons: [{ name: 'Braised Egg', priceDiff: 0.80 }, { name: 'Add Tofu', priceDiff: 0.80 }]
+                    }
+                },
+                { 
+                    name: 'Drumstick Rice', 
+                    description: 'Juicy drumstick with fragrant rice', 
+                    price: 6.00, 
+                    image: '', 
+                    badge: 'new',
+                    options: {
+                        sizes: [{ name: 'Regular Rice', priceDiff: 0 }, { name: 'Double Rice', priceDiff: 0.80 }],
+                        spicy: null,
+                        addons: [{ name: 'Braised Egg', priceDiff: 0.80 }]
+                    }
+                },
             ]
         },
         {
@@ -63,12 +126,54 @@ app.get('/menu', (req, res) => {
             emoji: '☕',
             description: 'Hot & cold local beverages',
             foods: [
-                { name: 'Kopi O', description: 'Traditional black coffee', price: 1.50, image: '', badge: '' },
-                { name: 'Teh Tarik', description: 'Frothy pulled milk tea', price: 1.80, image: '', badge: 'bestseller' },
-                { name: 'Milo Dinosaur', description: 'Iced Milo topped with Milo powder', price: 2.50, image: '', badge: '' },
-                { name: 'Bandung', description: 'Rose syrup with evaporated milk', price: 2.00, image: '', badge: '' },
-                { name: 'Coke', description: 'Chilled canned Coca-Cola', price: 1.80, image: '', badge: '' },
-                { name: 'Lemon Tea', description: 'Refreshing iced tea with lemon', price: 2.90, image: '', badge: '' },
+                { 
+                    name: 'Kopi O', 
+                    description: 'Traditional black coffee', 
+                    price: 1.50, 
+                    image: '', 
+                    badge: '',
+                    options: {
+                        sizes: [{ name: 'Regular Cup', priceDiff: 0 }, { name: 'Large Cup', priceDiff: 0.60 }],
+                        spicy: [{ name: 'Hot (Standard)' }, { name: 'Iced (Peng)', priceDiff: 0.40 }],
+                        addons: [{ name: 'Less Sweet', priceDiff: 0 }, { name: 'No Sugar (Kosong)', priceDiff: 0 }]
+                    }
+                },
+                { 
+                    name: 'Teh Tarik', 
+                    description: 'Frothy pulled milk tea', 
+                    price: 1.80, 
+                    image: '', 
+                    badge: 'bestseller',
+                    options: {
+                        sizes: [{ name: 'Regular Cup', priceDiff: 0 }, { name: 'Large Cup', priceDiff: 0.60 }],
+                        spicy: [{ name: 'Hot (Standard)' }, { name: 'Iced (Peng)', priceDiff: 0.40 }],
+                        addons: [{ name: 'Less Sweet', priceDiff: 0 }]
+                    }
+                },
+                { 
+                    name: 'Milo Dinosaur', 
+                    description: 'Iced Milo topped with Milo powder', 
+                    price: 2.50, 
+                    image: '', 
+                    badge: '',
+                    options: {
+                        sizes: [{ name: 'Regular', priceDiff: 0 }, { name: 'Jumbo', priceDiff: 0.80 }],
+                        spicy: [{ name: 'Iced (Standard)' }, { name: 'Hot Milo', priceDiff: -0.30 }],
+                        addons: [{ name: 'Extra Milo Powder', priceDiff: 0.50 }]
+                    }
+                },
+                { 
+                    name: 'Bandung', 
+                    description: 'Rose syrup with evaporated milk', 
+                    price: 2.00, 
+                    image: '', 
+                    badge: '',
+                    options: {
+                        sizes: [{ name: 'Regular', priceDiff: 0 }, { name: 'Large', priceDiff: 0.60 }],
+                        spicy: null,
+                        addons: [{ name: 'Add Grass Jelly (Chin Chow)', priceDiff: 0.50 }]
+                    }
+                },
             ]
         },
         {
@@ -77,10 +182,30 @@ app.get('/menu', (req, res) => {
             emoji: '🍱',
             description: 'Nasi lemak, mee goreng & more',
             foods: [
-                { name: 'Nasi Lemak', description: 'Coconut rice with sambal and egg', price: 4.50, image: '', badge: 'bestseller' },
-                { name: 'Mee Goreng', description: 'Spicy fried noodles with egg', price: 4.00, image: '', badge: '' },
-                { name: 'Nasi Goreng', description: 'Fragrant fried rice with chicken', price: 4.50, image: '', badge: '' },
-                { name: 'Ayam Penyet', description: 'Smashed fried chicken with sambal', price: 6.50, image: '', badge: 'spicy' },
+                { 
+                    name: 'Nasi Lemak', 
+                    description: 'Coconut rice with sambal and egg', 
+                    price: 4.50, 
+                    image: '', 
+                    badge: 'bestseller',
+                    options: {
+                        sizes: [{ name: 'Standard Portion', priceDiff: 0 }, { name: 'Double Rice', priceDiff: 0.80 }],
+                        spicy: [{ name: 'Standard Sambal' }, { name: 'Extra Sambal', priceDiff: 0.20 }],
+                        addons: [{ name: 'Add Fried Chicken Wing', priceDiff: 1.80 }, { name: 'Add Fishcake', priceDiff: 0.80 }]
+                    }
+                },
+                { 
+                    name: 'Mee Goreng', 
+                    description: 'Spicy fried noodles with egg', 
+                    price: 4.00, 
+                    image: '', 
+                    badge: '',
+                    options: {
+                        sizes: [{ name: 'Standard', priceDiff: 0 }, { name: 'Large Noodle', priceDiff: 1.00 }],
+                        spicy: [{ name: 'Mild' }, { name: 'Spicy (Standard)' }, { name: 'Extra Spicy' }],
+                        addons: [{ name: 'Add Sunny Side Egg', priceDiff: 1.00 }]
+                    }
+                },
             ]
         },
         {
@@ -89,10 +214,30 @@ app.get('/menu', (req, res) => {
             emoji: '🍜',
             description: 'Wok-fried classics and noodle soups',
             foods: [
-                { name: 'Char Kway Teow', description: 'Wok-fried flat noodles with cockles', price: 5.50, image: '', badge: 'bestseller' },
-                { name: 'Hokkien Mee', description: 'Braised noodles in rich prawn broth', price: 6.00, image: '', badge: '' },
-                { name: 'Bak Chor Mee', description: 'Minced pork noodles with vinegar', price: 5.00, image: '', badge: 'new' },
-                { name: 'Wonton Soup', description: 'Clear soup with pork and shrimp dumplings', price: 4.50, image: '', badge: '' },
+                { 
+                    name: 'Char Kway Teow', 
+                    description: 'Wok-fried flat noodles with cockles', 
+                    price: 5.50, 
+                    image: '', 
+                    badge: 'bestseller',
+                    options: {
+                        sizes: [{ name: 'Standard', priceDiff: 0 }, { name: 'Large', priceDiff: 1.20 }],
+                        spicy: [{ name: 'Mild' }, { name: 'Medium Spicy' }, { name: 'Extra Spicy' }],
+                        addons: [{ name: 'Extra Cockles', priceDiff: 1.50 }, { name: 'Add Fried Egg', priceDiff: 1.00 }]
+                    }
+                },
+                { 
+                    name: 'Bak Chor Mee', 
+                    description: 'Minced pork noodles with vinegar', 
+                    price: 5.00, 
+                    image: '', 
+                    badge: 'new',
+                    options: {
+                        sizes: [{ name: 'Standard', priceDiff: 0 }, { name: 'Large Noodle', priceDiff: 1.00 }],
+                        spicy: [{ name: 'No Chili (Vinegar only)' }, { name: 'Mild Chili' }, { name: 'Spicy' }],
+                        addons: [{ name: 'Add Extra Meatballs (3pcs)', priceDiff: 1.20 }, { name: 'Add Braised Mushrooms', priceDiff: 1.00 }]
+                    }
+                },
             ]
         },
         {
@@ -101,30 +246,46 @@ app.get('/menu', (req, res) => {
             emoji: '🧁',
             description: 'Sweet treats and cold desserts',
             foods: [
-                { name: 'Chendol', description: 'Shaved ice with coconut milk and gula melaka', price: 3.50, image: '', badge: 'bestseller' },
-                { name: 'Ice Kacang', description: 'Shaved ice with rainbow toppings', price: 3.50, image: '', badge: '' },
-                { name: 'Mango Pudding', description: 'Silky smooth mango pudding', price: 3.00, image: '', badge: 'new' },
-                { name: 'Waffle', description: 'Crispy waffle with ice cream', price: 5.00, image: '', badge: '' },
+                { 
+                    name: 'Chendol', 
+                    description: 'Shaved ice with coconut milk and gula melaka', 
+                    price: 3.50, 
+                    image: '', 
+                    badge: 'bestseller',
+                    options: {
+                        sizes: [{ name: 'Standard Bowl', priceDiff: 0 }, { name: 'Large Bowl', priceDiff: 1.00 }],
+                        spicy: null,
+                        addons: [{ name: 'Extra Gula Melaka Drizzle', priceDiff: 0.50 }, { name: 'Add Durian Flesh', priceDiff: 2.00 }]
+                    }
+                },
+                { 
+                    name: 'Waffle', 
+                    description: 'Crispy waffle with ice cream', 
+                    price: 5.00, 
+                    image: '', 
+                    badge: '',
+                    options: {
+                        sizes: [{ name: 'Single Waffle', priceDiff: 0 }, { name: 'Double Stacked Waffles', priceDiff: 2.50 }],
+                        spicy: null,
+                        addons: [{ name: 'Add Chocolate Drizzle', priceDiff: 0.50 }, { name: 'Add Scoop of Vanilla Ice Cream', priceDiff: 1.50 }]
+                    }
+                },
             ]
         }
     ];
 
-    // 2. Define an empty logo so it doesn't crash looking for images
+    // Define an empty logo so it doesn't crash looking for images
     const images = { logo: '/images/logo.png' };
 
     res.render('menu', { images, stalls });
 });
 
-
-
-// Checkout page. The cart itself lives in the browser (localStorage), so this
-// route just renders the payment form — the order summary is filled in client-side.
+// Checkout page
 app.get('/checkout', (req, res) => {
     res.render('checkout', { images });
 });
 
-// Fake payment endpoint (DEMO ONLY)
-// Use test card 4242 4242 4242 4242, other numbers will be declined.
+// Fake payment validation algorithm (Luhn)
 function luhnValid(number) {
     const digits = String(number).replace(/\s+/g, '');
     if (!/^\d{13,19}$/.test(digits)) return false;
@@ -142,26 +303,23 @@ function luhnValid(number) {
     return sum % 10 === 0;
 }
 
+// Payment charge endpoint
 app.post('/pay', (req, res) => {
     const { items, customer, card } = req.body || {};
 
-    // 1. Cart must contain something
     if (!Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ success: false, message: 'Your cart is empty. Add a dish before paying.' });
     }
 
-    // 2. Recalculate the total on the server
     const total = items.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
     if (!(total > 0)) {
         return res.status(400).json({ success: false, message: 'Order total is invalid.' });
     }
 
-    // 3. Simulated card check (demo only)
     if (!card || !luhnValid(card.number)) {
         return res.json({ success: false, message: 'Card declined. Check the number and try again.' });
     }
 
-    // 4. Charge successful hand back an order number a tracking system could use later
     const orderId = 'FH-' + Date.now().toString().slice(-6);
     return res.json({
         success: true,
@@ -171,7 +329,6 @@ app.post('/pay', (req, res) => {
         status: 'paid'
     });
 });
-
 
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
