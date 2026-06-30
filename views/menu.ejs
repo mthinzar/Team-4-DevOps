@@ -216,10 +216,13 @@
         .dish-desc {
             font-size: 0.78rem;
             color: #7a7a7a;
+            padding: 0 0.9rem;
             margin-bottom: 0.75rem;
             flex-grow: 1;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
+
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -268,7 +271,7 @@
             background: var(--pink-soft);
         }
 
-        .opt-radio-card input:checked + span {
+        .opt-radio-card input:checked+span {
             font-weight: 600;
         }
 
@@ -462,8 +465,10 @@
             position: fixed;
             top: 24px;
             left: 50%;
-            transform: translate(-50%, -180%); /* Start off-screen at the top */
-            z-index: 2000; /* High z-index to display on top of modals */
+            transform: translate(-50%, -180%);
+            /* Start off-screen at the top */
+            z-index: 2000;
+            /* High z-index to display on top of modals */
             background: rgba(255, 255, 255, 0.96);
             backdrop-filter: blur(8px);
             color: #1a1a1a;
@@ -483,7 +488,8 @@
         }
 
         .cart-toast.show {
-            transform: translate(-50%, 0); /* Slide down into view */
+            transform: translate(-50%, 0);
+            /* Slide down into view */
         }
 
         .cart-toast.show {
@@ -519,7 +525,8 @@
             <div class="d-none d-lg-flex flex-grow-1 justify-content-center">
                 <a href="/" class="nav-link-custom">Home</a>
                 <a href="#" class="nav-link-custom active" onclick="goBackToStalls(); return false;">Menu</a>
-                <a href="#popular" class="nav-link-custom" onclick="alert('Stalls filter is below!'); return false;">Categories</a>
+                <a href="#popular" class="nav-link-custom"
+                    onclick="alert('Stalls filter is below!'); return false;">Categories</a>
             </div>
 
             <div class="d-flex align-items-center">
@@ -543,7 +550,8 @@
             <p class="tagline mt-2 mb-4">Freshly prepared meals for you to collect.</p>
 
             <div class="menu-search">
-                <input type="text" id="searchInput" class="form-control" placeholder="Search for food (e.g. burger, noodles, tea)...">
+                <input type="text" id="searchInput" class="form-control"
+                    placeholder="Search for food (e.g. burger, noodles, tea)...">
             </div>
         </div>
     </section>
@@ -563,17 +571,20 @@
                         <h5 class="fw-bold mb-1">
                             <%= stall.name %>
                         </h5>
-                        <p class="text-muted small mb-0"><%= stall.description %></p>
+                        <p class="text-muted small mb-0">
+                            <%= stall.description %>
+                        </p>
                     </div>
                 </div>
-            <% }) %>
+                <% }) %>
         </div>
     </section>
 
     <!-- Stall Menu Grid -->
     <section class="container py-5" id="stallMenu" style="display: none;">
         <div class="d-flex align-items-center justify-content-between mb-4">
-            <button class="btn btn-outline-dark px-3 py-1.5 rounded-3 fw-medium" onclick="goBackToStalls()">← Back to Stalls</button>
+            <button class="btn btn-outline-dark px-3 py-1.5 rounded-3 fw-medium" onclick="goBackToStalls()">← Back to
+                Stalls</button>
             <h4 class="fw-bold mb-0" id="currentStallTitle">Menu</h4>
         </div>
 
@@ -587,7 +598,9 @@
                                 <span class="dish-badge">
                                     <%= stall.name %>
                                 </span>
-                                <img src="<%= food.image || 'https://img.icons8.com/color/96/hamburger.png' %>" class="dish-img" alt="<%= food.name %>" onerror="this.src='https://img.icons8.com/color/96/hamburger.png';">
+                                <img src="<%= food.image || 'https://img.icons8.com/color/96/hamburger.png' %>"
+                                    class="dish-img" alt="<%= food.name %>"
+                                    onerror="this.src='https://img.icons8.com/color/96/hamburger.png';">
                             </div>
                             <div class="dish-info-panel">
                                 <div class="dish-name">
@@ -597,14 +610,13 @@
                                     <%= food.description %>
                                 </p>
                                 <div class="d-flex align-items-center justify-content-between mt-auto">
-                                    <div class="dish-price">$<%= food.price.toFixed(2) %></div>
-                                    
+                                    <div class="dish-price">$<%= food.price.toFixed(2) %>
+                                    </div>
+
                                     <!-- Options stringified directly into button dataset -->
-                                    <button class="btn btn-add-cart add-to-cart mb-0 py-1.5 px-3" 
-                                        data-name="<%= food.name %>" 
-                                        data-price="<%= food.price %>" 
-                                        data-image="<%= food.image %>"
-                                        data-stall="<%= stall.name %>"
+                                    <button class="btn btn-add-cart add-to-cart mb-0 py-1.5 px-3"
+                                        data-name="<%= food.name %>" data-price="<%= food.price %>"
+                                        data-image="<%= food.image %>" data-stall="<%= stall.name %>"
                                         data-options='<%= JSON.stringify(food.options || null) %>'>
                                         Add to cart
                                     </button>
@@ -612,8 +624,8 @@
                             </div>
                         </div>
                     </div>
-                <% }) %>
-            <% }) %>
+                    <% }) %>
+                        <% }) %>
         </div>
 
         <div id="noResultsBlock" class="no-results mt-4">
@@ -635,9 +647,11 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 rounded-4 overflow-hidden shadow-lg">
                 <div class="modal-header border-0 bg-light p-3 position-relative">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
                     <div class="d-flex align-items-center gap-3">
-                        <img id="modalFoodImg" src="" alt="" class="rounded-3 shadow-sm" style="width: 64px; height: 64px; object-fit: cover;">
+                        <img id="modalFoodImg" src="" alt="" class="rounded-3 shadow-sm"
+                            style="width: 64px; height: 64px; object-fit: cover;">
                         <div>
                             <h5 class="modal-title fw-bold" id="customizeModalLabel">Customize Item</h5>
                             <div class="text-muted small" id="modalFoodStall">Stall Name</div>
@@ -669,11 +683,16 @@
                 </div>
                 <div class="modal-footer border-0 p-3 bg-light d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2">
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none" id="modalQtyMinus">-</button>
+                        <button type="button"
+                            class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none"
+                            id="modalQtyMinus">-</button>
                         <span class="fw-bold fs-5 px-1" id="modalQty">1</span>
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none" id="modalQtyPlus">+</button>
+                        <button type="button"
+                            class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none"
+                            id="modalQtyPlus">+</button>
                     </div>
-                    <button type="button" class="btn btn-danger px-4 py-2 border-0" id="btnConfirmAdd" style="background-color: var(--brand);">Add to Cart - $0.00</button>
+                    <button type="button" class="btn btn-danger px-4 py-2 border-0" id="btnConfirmAdd"
+                        style="background-color: var(--brand);">Add to Cart - $0.00</button>
                 </div>
             </div>
         </div>
@@ -684,8 +703,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="auth-header">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
                     <h5 class="fw-bold text-dark fs-4">Welcome Back</h5>
                     <p>Log in to continue ordering</p>
                 </div>
@@ -711,8 +730,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="auth-header">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal"
-                        aria-label="Close"></button>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
+                        data-bs-dismiss="modal" aria-label="Close"></button>
                     <h5 class="fw-bold text-dark fs-4">Create Account</h5>
                     <p>Join FoodHub and start ordering</p>
                 </div>
@@ -746,7 +765,10 @@
                     <span class="fw-semibold">Subtotal</span>
                     <span class="fw-bold fs-5 text-dark" id="cartSubtotal">$0.00</span>
                 </div>
-                <a href="/checkout" class="btn btn-checkout w-100 border-0 d-flex justify-content-center align-items-center" style="background-color: var(--brand); color:#fff; padding: 0.65rem; border-radius:10px; font-weight:600; text-decoration:none;">Go to checkout</a>
+                <a href="/checkout"
+                    class="btn btn-checkout w-100 border-0 d-flex justify-content-center align-items-center"
+                    style="background-color: var(--brand); color:#fff; padding: 0.65rem; border-radius:10px; font-weight:600; text-decoration:none;">Go
+                    to checkout</a>
             </div>
         </div>
     </div>
@@ -808,7 +830,7 @@
             if (savedCart) {
                 try {
                     cart = JSON.parse(savedCart);
-                } catch(e) {
+                } catch (e) {
                     cart = [];
                 }
             }
@@ -877,8 +899,8 @@
             if (term.length > 0) {
                 directory.style.display = 'none';
                 menu.style.display = 'block';
-                currentStallTitle.textContent = activeStallId 
-                    ? `Searching in ${currentStallTitle.textContent.split(' ').slice(1).join(' ')}` 
+                currentStallTitle.textContent = activeStallId
+                    ? `Searching in ${currentStallTitle.textContent.split(' ').slice(1).join(' ')}`
                     : "Search Results";
 
                 let matchesCount = 0;
@@ -912,11 +934,11 @@
                 const price = parseFloat(btn.dataset.price);
                 const image = btn.dataset.image;
                 const stall = btn.dataset.stall;
-                
+
                 let options = null;
                 try {
                     options = JSON.parse(btn.dataset.options);
-                } catch(err) {
+                } catch (err) {
                     options = null;
                 }
 
@@ -957,7 +979,7 @@
                 `).join('');
 
                 sizeOptions.querySelectorAll('.opt-radio-card').forEach(card => {
-                    card.addEventListener('click', function() {
+                    card.addEventListener('click', function () {
                         sizeOptions.querySelectorAll('.opt-radio-card').forEach(c => c.classList.remove('active'));
                         this.classList.add('active');
                     });
@@ -994,7 +1016,7 @@
                 `).join('');
 
                 addonsOptions.querySelectorAll('.opt-radio-card').forEach(card => {
-                    card.addEventListener('click', function() {
+                    card.addEventListener('click', function () {
                         const cb = this.querySelector('input[type="checkbox"]');
                         setTimeout(() => {
                             if (cb.checked) {
@@ -1014,7 +1036,7 @@
             customizeModal.show();
         }
 
-        window.selectSpicyPill = function(element) {
+        window.selectSpicyPill = function (element) {
             spicyOptions.querySelectorAll('.spicy-btn-pill').forEach(btn => {
                 btn.classList.remove('active', 'btn-danger', 'text-white');
             });
@@ -1178,7 +1200,7 @@
             }
         }
 
-        window.changeQty = function(index, diff) {
+        window.changeQty = function (index, diff) {
             cart[index].qty += diff;
             if (cart[index].qty <= 0) {
                 cart.splice(index, 1);
@@ -1186,7 +1208,7 @@
             updateCart();
         };
 
-        window.removeItem = function(index) {
+        window.removeItem = function (index) {
             cart.splice(index, 1);
             updateCart();
         };
