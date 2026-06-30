@@ -19,6 +19,7 @@
   "homepage": "https://github.com/mthinzar/Team-4-DevOps#readme",
   "dependencies": {
     "ejs": "^6.0.1",
-    "express": "^5.2.1"
+    "express": "^5.2.1",
+    "mongoose": "^9.7.3"
   }
 }
