@@ -272,6 +272,65 @@
         }
         footer a { color: #ddd; text-decoration: none; }
         footer a:hover { color: var(--brand); }
+
+        /* Cart button + badge */
+        .btn-cart {
+            border: 1px solid var(--brand);
+            background: #fff;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            line-height: 1;
+            padding: 0.35rem 0.6rem;
+            position: relative;
+        }
+        .btn-cart:hover { background: var(--pink-soft); }
+        .cart-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: var(--brand);
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 700;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
+        }
+
+        /* Cart drawer */
+        .cart-item { display: flex; gap: 0.75rem; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #f0d0d4; }
+        .cart-item img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; }
+        .cart-item-name { font-weight: 600; font-size: 0.9rem; }
+        .cart-item-price { color: var(--brand); font-weight: 600; font-size: 0.85rem; }
+        .qty-box { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.3rem; }
+        .qty-box button {
+            border: 1px solid #e0a4ac;
+            background: #fff;
+            width: 26px;
+            height: 26px;
+            border-radius: 6px;
+            line-height: 1;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+        .qty-box button:hover { background: var(--pink-soft); }
+        .cart-remove { background: none; border: none; color: #7a7a7a; font-size: 0.78rem; }
+        .cart-remove:hover { color: var(--brand); text-decoration: underline; }
+        .cart-empty { text-align: center; color: #7a7a7a; padding: 3rem 1rem; }
+        .cart-footer { border-top: 1px solid #f0d0d4; padding-top: 1rem; margin-top: 0.5rem; }
+        .btn-checkout {
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.6rem;
+            font-weight: 600;
+        }
+        .btn-checkout:hover { background: var(--brand-dark); color: #fff; }
     </style>
 </head>
 
@@ -292,7 +351,10 @@
             <a href="#popular" class="nav-link-custom">Categories</a>
         </div>
 
-        <div>
+        <div class="d-flex align-items-center">
+            <button type="button" class="btn btn-cart position-relative me-2" id="cartButton" aria-label="Open cart">
+                &#128722;<span class="cart-badge" id="cartBadge">0</span>
+            </button>
             <button type="button" class="btn btn-login me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
             <button type="button" class="btn btn-signup" data-bs-toggle="modal" data-bs-target="#signupModal">Sign Up</button>
         </div>
@@ -357,7 +419,10 @@
                     <div class="dish-name"><%= dish.name %></div>
                     <p class="dish-desc"><%= dish.description %></p>
                     <div class="dish-price mb-2">$<%= dish.price.toFixed(2) %></div>
-                    <button class="btn btn-add-cart">Add to cart</button>
+                    <button class="btn btn-add-cart add-to-cart"
+                            data-name="<%= dish.name %>"
+                            data-price="<%= dish.price %>"
+                            data-image="<%= dish.image %>">Add to cart</button>
                 </div>
 
             </div>
@@ -496,7 +561,26 @@
     </div>
 </div>
 
+<!-- Cart Drawer -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="cartDrawer" aria-labelledby="cartDrawerLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="cartDrawerLabel">Your order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column">
+        <div id="cartItems" class="flex-grow-1"></div>
+        <div class="cart-footer">
+            <div class="d-flex justify-content-between mb-3">
+                <span class="fw-semibold">Subtotal</span>
+                <span class="fw-bold" id="cartSubtotal">$0.00</span>
+            </div>
+            <a href="/checkout" class="btn btn-checkout w-100">Go to checkout</a>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/cart.js"></script>
 
 </body>
 </html>
