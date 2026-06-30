@@ -1,7 +1,7 @@
 // ============================================================
 //  In-memory dish review store.
-//  NOTE: reviews live in memory only and reset whenever the
-//  server restarts. Swap this out for a database later if needed.
+//  Reviews reset on server restart.
+//  Swap for a database later if persistence is needed.
 // ============================================================
 
 // Shape: { [dishId]: [ { id, name, rating, comment, date } ] }
@@ -12,7 +12,7 @@ function getReviews(dishId) {
     return reviewsByDish[dishId] || [];
 }
 
-/** Add a new review for a dish. Returns the saved review. */
+/** Add a review for a dish. Returns the saved review. */
 function addReview(dishId, { name, rating, comment }) {
     const review = {
         id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
@@ -21,16 +21,12 @@ function addReview(dishId, { name, rating, comment }) {
         comment: comment ? comment.trim() : '',
         date: new Date()
     };
-
-    if (!reviewsByDish[dishId]) {
-        reviewsByDish[dishId] = [];
-    }
-    reviewsByDish[dishId].unshift(review); // newest first
-
+    if (!reviewsByDish[dishId]) reviewsByDish[dishId] = [];
+    reviewsByDish[dishId].unshift(review);
     return review;
 }
 
-/** Average rating for a dish, rounded to 1 decimal place. 0 if no reviews. */
+/** Average rating for a dish, rounded to 1 decimal. Returns 0 if no reviews. */
 function getAverageRating(dishId) {
     const reviews = getReviews(dishId);
     if (reviews.length === 0) return 0;
@@ -43,9 +39,4 @@ function getReviewCount(dishId) {
     return getReviews(dishId).length;
 }
 
-module.exports = {
-    getReviews,
-    addReview,
-    getAverageRating,
-    getReviewCount
-};
+module.exports = { getReviews, addReview, getAverageRating, getReviewCount };
