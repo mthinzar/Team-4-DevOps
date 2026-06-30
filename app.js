@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 
 // Central image & dish data (edit images/dishes in data/dishes.js)
-const { images, popularDishes } = require('./data/dishes');
+const { images, popularDishes, foodStores } = require('./data/dishes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,7 +14,7 @@ app.use(express.static('public'));
 app.use(express.json());
 
 app.get('/', (req, res) => {
-    res.render('index', { images, popularDishes });
+    res.render('index', { images, foodStores });
 });
 
 app.get('/menu', (req, res) => {
@@ -23,6 +23,11 @@ app.get('/menu', (req, res) => {
     const categories = ['All', ...new Set(popularDishes.map(d => d.category))];
 
     res.render('menu', { images, foods: popularDishes, categories });
+});
+
+// Dedicated store listing page (shows all food stores)
+app.get('/stores', (req, res) => {
+    res.render('stores', { images, foodStores });
 });
 
 // Checkout page. The cart itself lives in the browser (localStorage), so this

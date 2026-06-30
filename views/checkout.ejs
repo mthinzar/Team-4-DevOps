@@ -49,6 +49,7 @@
         .form-label { font-weight: 500; font-size: 0.85rem; }
         .form-control { border-radius: 10px; padding: 0.65rem 0.9rem; }
         .form-control:focus { border-color: var(--brand); box-shadow: 0 0 0 0.2rem rgba(226, 55, 68, 0.15); }
+        .input-group-text { background: var(--pink-soft); border-color: #dee2e6; font-weight: 600; color: #1a1a1a; }
         .invalid-msg { color: var(--brand); font-size: 0.78rem; margin-top: 0.25rem; display: none; }
         .field-error .form-control { border-color: var(--brand); }
         .field-error .invalid-msg { display: block; }
@@ -103,6 +104,29 @@
             padding: 0.4rem 1rem;
             margin: 0.5rem 0 1.25rem;
         }
+
+        /* Footer (aligned with home page) */
+        footer { background: #1a1a1a; color: #ddd; }
+        footer a { color: #ddd; text-decoration: none; }
+        footer a:hover { color: var(--brand); }
+        footer h6 { font-weight: 600; margin-bottom: 1rem; color: #fff; }
+        .footer-logo { height: 64px; }
+        .footer-text { font-size: 0.85rem; color: #aaa; }
+        footer ul { list-style: none; padding-left: 0; }
+        footer ul li { margin-bottom: 0.5rem; font-size: 0.88rem; }
+        .footer-divider { border-color: #333; }
+        .social a {
+            display: inline-flex;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.4rem;
+            font-size: 0.78rem;
+        }
+        .social a:hover { background: var(--brand); color: #fff; }
     </style>
 </head>
 <body>
@@ -154,10 +178,13 @@
                         <div class="invalid-msg">Enter your name.</div>
                     </div>
 
-                    <div class="mb-3" id="f-email">
-                        <label class="form-label" for="email">Email</label>
-                        <input type="email" class="form-control" id="email" placeholder="you@example.com" autocomplete="email">
-                        <div class="invalid-msg">Enter a valid email address.</div>
+                    <div class="mb-3" id="f-phone">
+                        <label class="form-label" for="phone">Phone number</label>
+                        <div class="input-group">
+                            <span class="input-group-text">+65</span>
+                            <input type="tel" class="form-control" id="phone" placeholder="9123 4567" autocomplete="tel" maxlength="9">
+                        </div>
+                        <div class="invalid-msg">Enter a valid 8-digit Singapore number (starts with 6, 8 or 9).</div>
                     </div>
 
                     <div class="mb-3" id="f-card">
@@ -200,6 +227,67 @@
         </div>
     </div>
 </section>
+
+<!-- Footer (aligned with home page) -->
+<footer class="pt-5 pb-4">
+    <div class="container">
+        <div class="row gy-4">
+
+            <div class="col-md-4">
+                <a href="/" class="d-inline-block mb-3">
+                    <img src="<%= images.logo %>" alt="FoodHub" class="footer-logo"
+                         onerror="this.style.display='none';document.getElementById('footerBrandText').style.display='inline';">
+                    <span id="footerBrandText" class="fw-bold fs-4" style="display:none;">food<span class="brand-red">hub</span></span>
+                </a>
+                <p class="footer-text">
+                    Tasty meals from your favourite campus stores.
+                    Built for students, priced for students.
+                </p>
+                <div class="social mt-3">
+                    <a href="#" aria-label="Facebook">f</a>
+                    <a href="#" aria-label="Instagram">ig</a>
+                    <a href="#" aria-label="TikTok">tt</a>
+                    <a href="#" aria-label="Telegram">tg</a>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <h6>Explore</h6>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/stores">Stores</a></li>
+                    <li><a href="/#about">About</a></li>
+                    <li><a href="/menu">Menu</a></li>
+                </ul>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <h6>Contact</h6>
+                <ul>
+                    <li>📞 +65 9123 4567</li>
+                    <li>✉️ hello@foodhub.sg</li>
+                    <li>📍 Campus Hub, Singapore</li>
+                </ul>
+            </div>
+
+            <div class="col-md-3">
+                <h6>Opening Hours</h6>
+                <ul>
+                    <li>Mon – Fri: 9am – 9pm</li>
+                    <li>Sat – Sun: 10am – 8pm</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <hr class="footer-divider my-4">
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <span class="footer-text mb-2 mb-md-0">&copy; 2026 FoodHub. All rights reserved.</span>
+            <span class="footer-text">Made for students 🎓</span>
+        </div>
+    </div>
+</footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/cart.js"></script>
@@ -252,6 +340,19 @@
     cvvInput.addEventListener('input', () => {
         cvvInput.value = cvvInput.value.replace(/\D/g, '').slice(0, 4);
     });
+    const phoneInput = document.getElementById('phone');
+    phoneInput.addEventListener('input', () => {
+        const digits = phoneInput.value.replace(/\D/g, '').slice(0, 8);
+        phoneInput.value = digits.length > 4 ? digits.slice(0, 4) + ' ' + digits.slice(4) : digits;
+    });
+
+    // Prefill the name for a logged-in customer (set during phone sign-in)
+    try {
+        const savedUser = JSON.parse(localStorage.getItem('foodhubUser'));
+        if (savedUser && savedUser.name && savedUser.name !== 'Friend') {
+            document.getElementById('name').value = savedUser.name;
+        }
+    } catch (e) { /* ignore */ }
 
     // Luhn check - the standard test every real card number passes
     function luhnValid(number) {
@@ -285,11 +386,11 @@
     // Returns the form data if valid, or null if something is wrong
     function validateForm() {
         const name = document.getElementById('name').value.trim();
-        const email = document.getElementById('email').value.trim();
+        const phone = document.getElementById('phone').value.replace(/\s+/g, '');
 
         const checks = {
             'f-name': name.length > 0,
-            'f-email': /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+            'f-phone': /^[689]\d{7}$/.test(phone),
             'f-card': luhnValid(cardInput.value),
             'f-exp': expiryValid(expInput.value),
             'f-cvv': /^\d{3,4}$/.test(cvvInput.value)
@@ -302,7 +403,7 @@
         }
         if (!valid) return null;
 
-        return { name: name, email: email, card: cardInput.value, exp: expInput.value, cvv: cvvInput.value };
+        return { name: name, phone: '+65 ' + phone, card: cardInput.value, exp: expInput.value, cvv: cvvInput.value };
     }
 
     payForm.addEventListener('submit', event => {
@@ -326,7 +427,7 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     items: cart,
-                    customer: { name: data.name, email: data.email },
+                    customer: { name: data.name, phone: data.phone },
                     card: { number: data.card, expiry: data.exp, cvv: data.cvv }
                 })
             })

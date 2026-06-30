@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FoodHub - Menu</title>
+    <title>FoodHub - Stores</title>
 
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -90,86 +90,71 @@
         }
         .btn-user:hover { background: var(--pink-soft); }
 
-        /* Menu hero */
-        .menu-hero {
+        /* Stores hero */
+        .stores-hero {
             background: linear-gradient(120deg, #fde2e7 0%, #fcd7dd 60%, #f9c4cd 100%);
             border-radius: 24px;
             text-align: center;
             position: relative;
             overflow: hidden;
         }
-        .menu-hero h1 {
+        .stores-hero h1 {
             font-weight: 800;
             font-size: clamp(2rem, 4.5vw, 3.2rem);
         }
-        .menu-hero .tagline { color: #6b4a4f; }
+        .stores-hero .tagline { color: #6b4a4f; }
 
-        .menu-search { max-width: 720px; margin: 0 auto; }
-        .menu-search .form-control {
+        .stores-search { max-width: 720px; margin: 0 auto; }
+        .stores-search .form-control {
             border-radius: 12px;
             padding: 0.85rem 1.2rem;
             border: none;
             box-shadow: 0 8px 20px rgba(226, 55, 68, 0.12);
         }
-        .menu-search .form-control:focus { box-shadow: 0 0 0 0.2rem rgba(226, 55, 68, 0.15); }
+        .stores-search .form-control:focus { box-shadow: 0 0 0 0.2rem rgba(226, 55, 68, 0.15); }
 
-        /* Dish cards */
-        .dish-card {
+        /* Store cards */
+        .store-card {
             border: 1px solid #f0d0d4;
-            border-radius: 16px 16px 90px 90px;
-            text-align: center;
-            transition: 0.3s;
+            border-radius: 18px;
+            overflow: hidden;
             background: #fff;
+            transition: 0.3s;
             height: 100%;
+            display: block;
+            text-decoration: none;
+            color: inherit;
         }
-        .dish-card:hover {
+        .store-card:hover {
             transform: translateY(-8px);
             box-shadow: 0 14px 28px rgba(226, 55, 68, 0.16);
             border-color: var(--brand);
         }
-        .dish-img-wrap {
+        .store-img-wrap {
             background: var(--pink-soft);
-            padding: 1.25rem 0 0.75rem;
-            border-radius: 16px 16px 50% 50%;
-            position: relative;
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .dish-img {
-            width: 120px;
-            height: 120px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 4px solid #fff;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-        }
-        .dish-badge {
-            position: absolute;
-            top: 12px;
-            left: 12px;
-            background: var(--brand);
-            color: #fff;
-            font-size: 0.62rem;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-            text-transform: uppercase;
-            padding: 0.25rem 0.6rem;
-            border-radius: 20px;
-        }
-        .dish-name { font-weight: 600; font-size: 1rem; margin-top: 0.75rem; }
-        .dish-desc { font-size: 0.78rem; color: #7a7a7a; padding: 0 0.9rem; min-height: 48px; }
-        .dish-price { color: var(--brand); font-weight: 700; font-size: 1rem; }
-
-        .btn-add-cart {
-            background: var(--brand);
-            color: #fff;
+        .store-img { max-height: 130px; max-width: 80%; object-fit: contain; }
+        .store-body { padding: 1rem 1.1rem 1.2rem; }
+        .store-name { font-weight: 600; font-size: 1.05rem; margin-bottom: 0.1rem; }
+        .store-cuisine { font-size: 0.8rem; color: #7a7a7a; margin-bottom: 0.7rem; }
+        .store-meta {
             font-size: 0.8rem;
-            border: none;
-            padding: 0.45rem 1.3rem;
-            border-radius: 8px;
-            margin-bottom: 1.4rem;
-            font-weight: 500;
-            transition: 0.25s;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .btn-add-cart:hover { background: var(--brand-dark); color: #fff; }
+        .rating-badge {
+            background: var(--pink-soft);
+            color: var(--brand);
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 0.15rem 0.5rem;
+        }
 
         .no-results {
             display: none;
@@ -325,7 +310,7 @@
 
         <div class="d-none d-lg-flex flex-grow-1 justify-content-center">
             <a href="/" class="nav-link-custom">Home</a>
-            <a href="/stores" class="nav-link-custom">Stores</a>
+            <a href="/stores" class="nav-link-custom active">Stores</a>
         </div>
 
         <div class="d-flex align-items-center">
@@ -356,45 +341,42 @@
     </div>
 </nav>
 
-<!-- Menu Hero -->
+<!-- Stores Hero -->
 <section class="container mt-4">
-    <div class="menu-hero p-4 p-md-5">
-        <h1>Explore Our <span class="brand-red">Stalls</span></h1>
+    <div class="stores-hero p-4 p-md-5">
+        <h1>Our Food <span class="brand-red">Stores</span></h1>
+        <p class="tagline mt-2 mb-4">Browse every store on and around campus, all in one place.</p>
 
-        <div class="menu-search mt-3">
-            <input type="text" id="searchInput" class="form-control" placeholder="Search for food...">
+        <div class="stores-search">
+            <input type="text" id="searchInput" class="form-control" placeholder="Search for a store...">
         </div>
     </div>
 </section>
 
-<!-- Menu Grid -->
+<!-- Stores Grid -->
 <section class="container py-5">
-    <div class="row g-3" id="menuGrid">
+    <div class="row g-3" id="storesGrid">
 
-        <% foods.forEach(food => { %>
+        <% foodStores.forEach(store => { %>
 
-        <div class="col-6 col-md-4 col-lg-3 menu-item"
-             data-category="<%= food.category %>"
-             data-name="<%= food.name.toLowerCase() %>">
+        <div class="col-6 col-md-4 store-item" data-name="<%= store.name.toLowerCase() %> <%= store.cuisine.toLowerCase() %>">
 
-            <div class="dish-card">
+            <a href="/menu" class="store-card">
 
-                <div class="dish-img-wrap">
-                    <span class="dish-badge"><%= food.category %></span>
-                    <img src="<%= food.image %>" class="dish-img" alt="<%= food.name %>">
+                <div class="store-img-wrap">
+                    <img src="<%= store.image %>" class="store-img" alt="<%= store.name %>">
                 </div>
 
-                <div class="px-2">
-                    <div class="dish-name"><%= food.name %></div>
-                    <p class="dish-desc"><%= food.description %></p>
-                    <div class="dish-price mb-2">$<%= food.price.toFixed(2) %></div>
-                    <button class="btn btn-add-cart add-to-cart"
-                            data-name="<%= food.name %>"
-                            data-price="<%= food.price %>"
-                            data-image="<%= food.image %>">Add to cart</button>
+                <div class="store-body">
+                    <div class="store-name"><%= store.name %></div>
+                    <div class="store-cuisine"><%= store.cuisine %></div>
+                    <div class="store-meta">
+                        <span class="rating-badge">⭐ <%= store.rating %></span>
+                        <span>🕒 Ready in <%= store.prepTime %></span>
+                    </div>
                 </div>
 
-            </div>
+            </a>
 
         </div>
 
@@ -403,7 +385,7 @@
     </div>
 
     <div class="no-results" id="noResults">
-        <h5>No dishes found</h5>
+        <h5>No stores found</h5>
         <p>Try a different search.</p>
     </div>
 </section>
@@ -436,7 +418,7 @@
                 <ul>
                     <li><a href="/">Home</a></li>
                     <li><a href="/stores">Stores</a></li>
-                    <li><a href="/#about">About</a></li>
+                    <li><a href="/menu">Menu</a></li>
                     <li><a href="/checkout">Checkout</a></li>
                 </ul>
             </div>
@@ -711,10 +693,10 @@
 </script>
 <script src="/js/cart.js"></script>
 
-<!-- Search filtering -->
+<!-- Store search filtering -->
 <script>
     const searchInput = document.getElementById('searchInput');
-    const items = document.querySelectorAll('.menu-item');
+    const items = document.querySelectorAll('.store-item');
     const noResults = document.getElementById('noResults');
 
     searchInput.addEventListener('input', function () {

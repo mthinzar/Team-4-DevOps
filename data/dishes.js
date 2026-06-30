@@ -49,4 +49,73 @@ const popularDishes = [
     }
 ];
 
-module.exports = { images, popularDishes };
+// --- Food stores shown on the home page ---
+//  Each store links through to the menu. Placeholder data for now —
+//  swap names / images / ratings for real vendors later.
+const foodStores = [
+    {
+        name: 'Burger Barn',
+        cuisine: 'Burgers & Fast Food',
+        image: '/images/burger.png',
+        rating: 4.7,
+        prepTime: '20-30 min'
+    },
+    {
+        name: 'Pizza Corner',
+        cuisine: 'Pizza & Italian',
+        image: '/images/pizza.png',
+        rating: 4.5,
+        prepTime: '25-35 min'
+    },
+    {
+        name: 'Pasta House',
+        cuisine: 'Pasta & Western',
+        image: '/images/pasta.png',
+        rating: 4.6,
+        prepTime: '20-30 min'
+    },
+    {
+        name: 'Mala Kitchen',
+        cuisine: 'Chinese & Spicy',
+        image: '/images/mala.png',
+        rating: 4.8,
+        prepTime: '30-40 min'
+    },
+    {
+        name: 'Sip & Sweet',
+        cuisine: 'Drinks & Desserts',
+        image: '/images/lemontea.png',
+        rating: 4.4,
+        prepTime: '15-25 min'
+    },
+    {
+        name: 'The Grill Shack',
+        cuisine: 'Burgers & BBQ',
+        image: '/images/burger.png',
+        rating: 4.6,
+        prepTime: '20-30 min'
+    },
+    {
+        name: 'Spice Wok',
+        cuisine: 'Asian & Noodles',
+        image: '/images/mala.png',
+        rating: 4.7,
+        prepTime: '25-35 min'
+    },
+    {
+        name: 'Bubble Bar',
+        cuisine: 'Bubble Tea & Drinks',
+        image: '/images/lemontea.png',
+        rating: 4.5,
+        prepTime: '10-20 min'
+    },
+    {
+        name: 'Slice Heaven',
+        cuisine: 'Pizza & Sides',
+        image: '/images/pizza.png',
+        rating: 4.3,
+        prepTime: '25-35 min'
+    }
+];
+
+module.exports = { images, popularDishes, foodStores };

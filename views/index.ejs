@@ -67,6 +67,31 @@
         }
         .btn-signup:hover { background: var(--brand-dark); color: #fff; }
 
+        /* Logged-in user menu */
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--brand);
+            color: #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+        .btn-user {
+            border: 1px solid #f0d0d4;
+            background: #fff;
+            border-radius: 30px;
+            padding: 0.25rem 0.75rem 0.25rem 0.35rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 500;
+        }
+        .btn-user:hover { background: var(--pink-soft); }
+
         /* Hero */
         .hero {
             background: linear-gradient(120deg, #fde2e7 0%, #fcd7dd 60%, #f9c4cd 100%);
@@ -133,18 +158,34 @@
         }
         .btn-view-menu:hover { background: #fff5f6; transform: translateY(-2px); }
 
-        .hero-img {
-            max-height: 360px;
-            width: 100%;
-            object-fit: cover;
+        /* Hero carousel */
+        .hero-carousel {
             border-radius: 20px;
+            overflow: hidden;
             box-shadow: 0 18px 34px rgba(0,0,0,0.18);
-            animation: float 4s ease-in-out infinite;
+            background: rgba(255, 255, 255, 0.45);
         }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-14px); }
+        .hero-carousel .carousel-item img {
+            height: 340px;
+            width: 100%;
+            object-fit: contain;
+            padding: 1.25rem;
+        }
+        .hero-carousel .carousel-indicators [data-bs-target] {
+            background-color: var(--brand);
+        }
+        .hero-carousel .carousel-caption {
+            left: 50%;
+            right: auto;
+            transform: translateX(-50%);
+            bottom: 16px;
+            width: auto;
+            display: inline-block;
+            background: rgba(26, 26, 26, 0.6);
+            border-radius: 30px;
+            padding: 0.35rem 1.1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
         }
 
         /* Section heading */
@@ -167,53 +208,6 @@
         }
         .view-all:hover { color: var(--brand-dark); }
 
-        /* Dish cards */
-        .dish-card {
-            border: 1px solid #f0d0d4;
-            border-radius: 16px 16px 90px 90px;
-            text-align: center;
-            transition: 0.3s;
-            background: #fff;
-            height: 100%;
-        }
-        .dish-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 14px 28px rgba(226, 55, 68, 0.16);
-            border-color: var(--brand);
-        }
-
-        .dish-img-wrap {
-            background: var(--pink-soft);
-            padding: 1.25rem 0 0.75rem;
-            border-radius: 16px 16px 50% 50%;
-        }
-
-        .dish-img {
-            width: 120px;
-            height: 120px;
-            object-fit: cover;
-            border-radius: 50%;
-            border: 4px solid #fff;
-            box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-        }
-
-        .dish-name { font-weight: 600; font-size: 1rem; margin-top: 0.75rem; }
-        .dish-desc { font-size: 0.78rem; color: #7a7a7a; padding: 0 0.9rem; min-height: 48px; }
-        .dish-price { color: var(--brand); font-weight: 700; font-size: 1rem; }
-
-        .btn-add-cart {
-            background: var(--brand);
-            color: #fff;
-            font-size: 0.8rem;
-            border: none;
-            padding: 0.45rem 1.3rem;
-            border-radius: 8px;
-            margin-bottom: 1.4rem;
-            font-weight: 500;
-            transition: 0.25s;
-        }
-        .btn-add-cart:hover { background: var(--brand-dark); color: #fff; }
-
         /* Feature strip */
         .feature-strip {
             background: var(--pink-soft);
@@ -224,6 +218,64 @@
         }
         .feature-box h6 { font-weight: 600; margin-top: 0.5rem; }
         .feature-box p { font-size: 0.82rem; color: #7a7a7a; }
+
+        /* Food store cards */
+        .store-card {
+            border: 1px solid #f0d0d4;
+            border-radius: 18px;
+            overflow: hidden;
+            background: #fff;
+            transition: 0.3s;
+            height: 100%;
+            display: block;
+            text-decoration: none;
+            color: inherit;
+        }
+        .store-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 14px 28px rgba(226, 55, 68, 0.16);
+            border-color: var(--brand);
+        }
+        .store-img-wrap {
+            background: var(--pink-soft);
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .store-img {
+            max-height: 130px;
+            max-width: 80%;
+            object-fit: contain;
+        }
+        .store-body { padding: 1rem 1.1rem 1.2rem; }
+        .store-name { font-weight: 600; font-size: 1.05rem; margin-bottom: 0.1rem; }
+        .store-cuisine { font-size: 0.8rem; color: #7a7a7a; margin-bottom: 0.7rem; }
+        .store-meta {
+            font-size: 0.8rem;
+            color: #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .rating-badge {
+            background: var(--pink-soft);
+            color: var(--brand);
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 0.15rem 0.5rem;
+        }
+
+        /* Who We Are */
+        .about-img {
+            width: 100%;
+            border-radius: 20px;
+            object-fit: cover;
+            box-shadow: 0 14px 30px rgba(0,0,0,0.12);
+        }
+        .about-list { list-style: none; padding-left: 0; }
+        .about-list li { margin-bottom: 0.6rem; font-size: 0.92rem; }
+        .about-list li::before { content: '✓'; color: var(--brand); font-weight: 700; margin-right: 0.5rem; }
 
         /* Auth modals */
         .auth-modal .modal-content {
@@ -250,6 +302,14 @@
             border-color: var(--brand);
             box-shadow: 0 0 0 0.2rem rgba(226, 55, 68, 0.15);
         }
+        .code-hint { font-size: 0.8rem; color: #7a7a7a; }
+        .auth-body .input-group-text {
+            background: var(--pink-soft);
+            border-color: #dee2e6;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .field-err { display: none; color: var(--brand); font-size: 0.78rem; margin-top: 0.3rem; }
         .btn-auth {
             background: var(--brand);
             color: #fff;
@@ -261,6 +321,15 @@
             transition: 0.25s;
         }
         .btn-auth:hover { background: var(--brand-dark); color: #fff; }
+        .btn-link-brand {
+            background: none;
+            border: none;
+            color: var(--brand);
+            font-size: 0.82rem;
+            font-weight: 500;
+            padding: 0;
+        }
+        .btn-link-brand:hover { text-decoration: underline; }
         .auth-switch { font-size: 0.85rem; text-align: center; margin-top: 1rem; }
         .auth-switch a { color: var(--brand); text-decoration: none; font-weight: 600; cursor: pointer; }
         .auth-switch a:hover { text-decoration: underline; }
@@ -272,6 +341,24 @@
         }
         footer a { color: #ddd; text-decoration: none; }
         footer a:hover { color: var(--brand); }
+        footer h6 { font-weight: 600; margin-bottom: 1rem; color: #fff; }
+        .footer-logo { height: 64px; }
+        .footer-text { font-size: 0.85rem; color: #aaa; }
+        footer ul { list-style: none; padding-left: 0; }
+        footer ul li { margin-bottom: 0.5rem; font-size: 0.88rem; }
+        .footer-divider { border-color: #333; }
+        .social a {
+            display: inline-flex;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.4rem;
+            font-size: 0.78rem;
+        }
+        .social a:hover { background: var(--brand); color: #fff; }
 
         /* Cart button + badge */
         .btn-cart {
@@ -347,16 +434,33 @@
 
         <div class="d-none d-lg-flex flex-grow-1 justify-content-center">
             <a href="/" class="nav-link-custom">Home</a>
-            <a href="/menu" class="nav-link-custom">Menu</a>
-            
+            <a href="/stores" class="nav-link-custom">Stores</a>
         </div>
 
         <div class="d-flex align-items-center">
             <button type="button" class="btn btn-cart position-relative me-2" id="cartButton" aria-label="Open cart">
                 &#128722;<span class="cart-badge" id="cartBadge">0</span>
             </button>
-            <button type="button" class="btn btn-login me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
-            <button type="button" class="btn btn-signup" data-bs-toggle="modal" data-bs-target="#signupModal">Sign Up</button>
+
+            <!-- Logged-out: Login / Sign Up -->
+            <div id="authButtons" class="d-flex">
+                <button type="button" class="btn btn-login me-2" data-bs-toggle="modal" data-bs-target="#loginModal">Login</button>
+                <button type="button" class="btn btn-signup" data-bs-toggle="modal" data-bs-target="#signupModal">Sign Up</button>
+            </div>
+
+            <!-- Logged-in: avatar + name dropdown -->
+            <div id="userMenu" class="dropdown d-none">
+                <button class="btn btn-user dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <span class="user-avatar" id="userInitial">U</span>
+                    <span id="userName">User</span>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow">
+                    <li><a class="dropdown-item" href="#">My Profile</a></li>
+                    <li><a class="dropdown-item" href="/menu">My Orders</a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item" href="#" id="logoutBtn">Logout</a></li>
+                </ul>
+            </div>
         </div>
     </div>
 </nav>
@@ -374,74 +478,64 @@
                 </h1>
 
                 <p class="tagline mt-3 mb-4">
-                    Freshly prepared meals delivered hot to your door.
-                    Browse the menu, order in seconds, and enjoy.
+                    Freshly prepared meals from your favourite campus stores.
+                    Order ahead, skip the queue, and collect when ready.
                 </p>
 
                 <div>
-                    <a href="/menu" class="btn btn-order me-2">Order Now &rarr;</a>
-                    <a href="/menu" class="btn btn-view-menu">View Menu</a>
+                    <a href="/stores" class="btn btn-order">Browse Stores &rarr;</a>
                 </div>
             </div>
 
-            <div class="col-md-6 text-center mt-4 mt-md-0">
-                <img src="<%= images.hero %>" class="img-fluid hero-img" alt="Delicious food bowl">
+            <div class="col-md-6 mt-4 mt-md-0">
+                <div id="heroCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+                        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="3" aria-label="Slide 4"></button>
+                    </div>
+                    <div class="carousel-inner">
+                        <div class="carousel-item active">
+                            <img src="/images/pizza.png" alt="Cheese Pizza">
+                            <div class="carousel-caption">Wood-fired Pizza 🍕</div>
+                        </div>
+                        <div class="carousel-item">
+                            <img src="/images/burger.png" alt="Hamburger">
+                            <div class="carousel-caption">Juicy Burgers 🍔</div>
+                        </div>
+                        <div class="carousel-item">
+                            <img src="/images/mala.png" alt="Mala Xiang Guo">
+                            <div class="carousel-caption">Spicy Mala 🌶️</div>
+                        </div>
+                        <div class="carousel-item">
+                            <img src="/images/pasta.png" alt="Creamy Pasta">
+                            <div class="carousel-caption">Creamy Pasta 🍝</div>
+                        </div>
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
             </div>
 
         </div>
     </div>
 </section>
 
-<!-- Popular Dishes -->
-<section class="container py-5" id="popular">
-
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="section-title mb-0">
-            Popular Dishes
-            <span class="underline"></span>
-        </h2>
-        <a href="/menu" class="view-all">View All &rarr;</a>
-    </div>
-
-    <div class="row g-3">
-
-        <% popularDishes.forEach(dish => { %>
-
-        <div class="col-6 col-md-4 col-lg">
-
-            <div class="dish-card">
-
-                <div class="dish-img-wrap">
-                    <img src="<%= dish.image %>" class="dish-img" alt="<%= dish.name %>">
-                </div>
-
-                <div class="px-2">
-                    <div class="dish-name"><%= dish.name %></div>
-                    <p class="dish-desc"><%= dish.description %></p>
-                    <div class="dish-price mb-2">$<%= dish.price.toFixed(2) %></div>
-                    <button class="btn btn-add-cart add-to-cart"
-                            data-name="<%= dish.name %>"
-                            data-price="<%= dish.price %>"
-                            data-image="<%= dish.image %>">Add to cart</button>
-                </div>
-
-            </div>
-
-        </div>
-
-        <% }) %>
-
-    </div>
-</section>
-
-<!-- Feature Strip -->
-<section class="container pb-5">
+<!-- Feature Strip (moved up, right under the hero) -->
+<section class="container pt-5">
     <div class="feature-strip p-4">
         <div class="row text-center g-4">
             <div class="col-6 col-md-3 feature-box">
-                <div class="icon">🚚</div>
-                <h6>Fast Delivery</h6>
-                <p>Hot meals at your door in 30 minutes.</p>
+                <div class="icon">🥡</div>
+                <h6>Quick Pickup</h6>
+                <p>Order ahead and skip the queue.</p>
             </div>
             <div class="col-6 col-md-3 feature-box">
                 <div class="icon">🥗</div>
@@ -462,14 +556,131 @@
     </div>
 </section>
 
+<!-- Food Stores -->
+<section class="container py-5" id="stores">
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="section-title mb-0">
+            Food Stores
+            <span class="underline"></span>
+        </h2>
+        <a href="/stores" class="view-all">View All &rarr;</a>
+    </div>
+
+    <div class="row g-3">
+
+        <% foodStores.slice(0, 4).forEach(store => { %>
+
+        <div class="col-6 col-md-3">
+
+            <a href="/menu" class="store-card">
+
+                <div class="store-img-wrap">
+                    <img src="<%= store.image %>" class="store-img" alt="<%= store.name %>">
+                </div>
+
+                <div class="store-body">
+                    <div class="store-name"><%= store.name %></div>
+                    <div class="store-cuisine"><%= store.cuisine %></div>
+                    <div class="store-meta">
+                        <span class="rating-badge">⭐ <%= store.rating %></span>
+                        <span>🕒 Ready in <%= store.prepTime %></span>
+                    </div>
+                </div>
+
+            </a>
+
+        </div>
+
+        <% }) %>
+
+    </div>
+</section>
+
+<!-- Who We Are -->
+<section class="container py-5" id="about">
+    <div class="row align-items-center g-4">
+        <div class="col-md-6">
+            <img src="<%= images.hero %>" class="about-img" alt="About FoodHub">
+        </div>
+        <div class="col-md-6">
+            <h2 class="section-title mb-3">
+                Who We Are
+                <span class="underline"></span>
+            </h2>
+            <p class="text-muted">
+                FoodHub is a campus food-ordering platform built for students, by students.
+                We bring together your favourite canteen stalls and nearby stores in one place,
+                so you can grab a quick meal between classes without the queue.
+            </p>
+            <ul class="about-list">
+                <li>One app for every store on and around campus.</li>
+                <li>Student-friendly prices and no hidden fees.</li>
+                <li>Quick phone sign-in — no passwords to remember.</li>
+                <li>Order ahead and collect when it's ready.</li>
+            </ul>
+            <a href="/menu" class="btn btn-order mt-2">Start Ordering &rarr;</a>
+        </div>
+    </div>
+</section>
+
 <!-- Footer -->
-<footer class="py-4">
-    <div class="container d-flex flex-column flex-md-row justify-content-between align-items-center">
-        <span class="mb-2 mb-md-0">&copy; 2026 FoodHub. All rights reserved.</span>
-        <div>
-            <a href="/" class="me-3">Home</a>
-            <a href="/menu" class="me-3">Menu</a>
-            <a href="#popular">Categories</a>
+<footer class="pt-5 pb-4">
+    <div class="container">
+        <div class="row gy-4">
+
+            <div class="col-md-4">
+                <a href="/" class="d-inline-block mb-3">
+                    <img src="<%= images.logo %>" alt="FoodHub" class="footer-logo"
+                         onerror="this.style.display='none';document.getElementById('footerBrandText').style.display='inline';">
+                    <span id="footerBrandText" class="fw-bold fs-4" style="display:none;">food<span class="brand-red">hub</span></span>
+                </a>
+                <p class="footer-text">
+                    Tasty meals from your favourite campus stores.
+                    Built for students, priced for students.
+                </p>
+                <div class="social mt-3">
+                    <a href="#" aria-label="Facebook">f</a>
+                    <a href="#" aria-label="Instagram">ig</a>
+                    <a href="#" aria-label="TikTok">tt</a>
+                    <a href="#" aria-label="Telegram">tg</a>
+                </div>
+            </div>
+
+            <div class="col-6 col-md-2">
+                <h6>Explore</h6>
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/stores">Stores</a></li>
+                    <li><a href="#about">About</a></li>
+                    <li><a href="/checkout">Checkout</a></li>
+                </ul>
+            </div>
+
+            <div class="col-6 col-md-3">
+                <h6>Contact</h6>
+                <ul>
+                    <li>📞 +65 9123 4567</li>
+                    <li>✉️ hello@foodhub.sg</li>
+                    <li>📍 Campus Hub, Singapore</li>
+                </ul>
+            </div>
+
+            <div class="col-md-3">
+                <h6>Opening Hours</h6>
+                <ul>
+                    <li>Mon – Fri: 9am – 9pm</li>
+                    <li>Sat – Sun: 10am – 8pm</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <hr class="footer-divider my-4">
+
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-center">
+            <span class="footer-text mb-2 mb-md-0">&copy; 2026 FoodHub. All rights reserved.</span>
+            <span class="footer-text">Made for students 🎓</span>
         </div>
     </div>
 </footer>
@@ -483,29 +694,40 @@
                 <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
                 <img src="<%= images.logo %>" alt="FoodHub">
                 <h5>Welcome Back</h5>
-                <p>Log in to continue ordering</p>
+                <p>Log in with your phone number</p>
             </div>
 
             <div class="auth-body">
-                <!-- TODO: hook up to backend later (action="/login" method="POST") -->
-                <form>
+
+                <!-- Step 1: phone number -->
+                <div id="loginStep1">
                     <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" placeholder="you@example.com" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-control" placeholder="Enter your password" required>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="rememberMe">
-                            <label class="form-check-label" for="rememberMe" style="font-size:0.82rem;">Remember me</label>
+                        <label class="form-label">Phone number</label>
+                        <div class="input-group">
+                            <span class="input-group-text">+65</span>
+                            <input type="tel" id="loginPhone" class="form-control" placeholder="9123 4567" autocomplete="tel" maxlength="9">
                         </div>
-                        <a href="#" style="font-size:0.82rem; color:var(--brand); text-decoration:none;">Forgot password?</a>
+                        <div id="loginPhoneErr" class="field-err">Enter a valid 8-digit Singapore number (starts with 6, 8 or 9).</div>
                     </div>
-                    <button type="submit" class="btn-auth">Login</button>
-                </form>
+                    <button type="button" id="loginSendBtn" class="btn-auth">Send Security Code</button>
+                </div>
+
+                <!-- Step 2: security code -->
+                <div id="loginStep2" style="display:none;">
+                    <p class="code-hint mb-3">
+                        We sent a 6-digit code to <strong id="loginSentTo"></strong>.
+                        <span class="text-muted">(Demo: enter any 6 digits)</span>
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label">Security code</label>
+                        <input type="text" inputmode="numeric" maxlength="6" id="loginCode" class="form-control" placeholder="● ● ● ● ● ●">
+                        <div id="loginCodeErr" class="field-err">Enter the 6-digit code.</div>
+                    </div>
+                    <button type="button" id="loginVerifyBtn" class="btn-auth">Verify &amp; Login</button>
+                    <div class="text-center mt-2">
+                        <button type="button" class="btn-link-brand" id="loginResend">Use a different number</button>
+                    </div>
+                </div>
 
                 <p class="auth-switch">
                     Don't have an account?
@@ -526,30 +748,45 @@
                 <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
                 <img src="<%= images.logo %>" alt="FoodHub">
                 <h5>Create Account</h5>
-                <p>Join FoodHub and start ordering</p>
+                <p>Join FoodHub in two quick steps</p>
             </div>
 
             <div class="auth-body">
-                <!-- TODO: hook up to backend later (action="/signup" method="POST") -->
-                <form>
+
+                <!-- Step 1: name + phone -->
+                <div id="signupStep1">
                     <div class="mb-3">
                         <label class="form-label">Full Name</label>
-                        <input type="text" class="form-control" placeholder="Your name" required>
+                        <input type="text" id="signupName" class="form-control" placeholder="Your name" autocomplete="name">
+                        <div id="signupNameErr" class="field-err">Please enter your name.</div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <input type="email" class="form-control" placeholder="you@example.com" required>
+                        <label class="form-label">Phone number</label>
+                        <div class="input-group">
+                            <span class="input-group-text">+65</span>
+                            <input type="tel" id="signupPhone" class="form-control" placeholder="9123 4567" autocomplete="tel" maxlength="9">
+                        </div>
+                        <div id="signupPhoneErr" class="field-err">Enter a valid 8-digit Singapore number (starts with 6, 8 or 9).</div>
                     </div>
+                    <button type="button" id="signupSendBtn" class="btn-auth">Send Security Code</button>
+                </div>
+
+                <!-- Step 2: security code -->
+                <div id="signupStep2" style="display:none;">
+                    <p class="code-hint mb-3">
+                        We sent a 6-digit code to <strong id="signupSentTo"></strong>.
+                        <span class="text-muted">(Demo: enter any 6 digits)</span>
+                    </p>
                     <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <input type="password" class="form-control" placeholder="Create a password" required>
+                        <label class="form-label">Security code</label>
+                        <input type="text" inputmode="numeric" maxlength="6" id="signupCode" class="form-control" placeholder="● ● ● ● ● ●">
+                        <div id="signupCodeErr" class="field-err">Enter the 6-digit code.</div>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control" placeholder="Re-enter your password" required>
+                    <button type="button" id="signupVerifyBtn" class="btn-auth">Create Account</button>
+                    <div class="text-center mt-2">
+                        <button type="button" class="btn-link-brand" id="signupResend">Edit details</button>
                     </div>
-                    <button type="submit" class="btn-auth">Sign Up</button>
-                </form>
+                </div>
 
                 <p class="auth-switch">
                     Already have an account?
@@ -580,6 +817,119 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Auth: phone + security code (demo) and logged-in state -->
+<script>
+(function () {
+    const STORE_KEY = 'foodhubUser';
+
+    function getUser() {
+        try { return JSON.parse(localStorage.getItem(STORE_KEY)); }
+        catch (e) { return null; }
+    }
+
+    function renderAuth() {
+        const user = getUser();
+        const authButtons = document.getElementById('authButtons');
+        const userMenu = document.getElementById('userMenu');
+        if (user && user.name) {
+            authButtons.classList.add('d-none');
+            userMenu.classList.remove('d-none');
+            document.getElementById('userName').textContent = user.name;
+            document.getElementById('userInitial').textContent = user.name.trim().charAt(0).toUpperCase();
+        } else {
+            authButtons.classList.remove('d-none');
+            userMenu.classList.add('d-none');
+        }
+    }
+
+    function loginUser(name) {
+        localStorage.setItem(STORE_KEY, JSON.stringify({ name: name }));
+        renderAuth();
+    }
+
+    document.getElementById('logoutBtn').addEventListener('click', function (e) {
+        e.preventDefault();
+        localStorage.removeItem(STORE_KEY);
+        renderAuth();
+    });
+
+    function closeModal(id) {
+        const inst = bootstrap.Modal.getInstance(document.getElementById(id));
+        if (inst) inst.hide();
+    }
+
+    function showStep(prefix, step) {
+        document.getElementById(prefix + 'Step1').style.display = step === 1 ? 'block' : 'none';
+        document.getElementById(prefix + 'Step2').style.display = step === 2 ? 'block' : 'none';
+    }
+
+    // Singapore mobile/landline: 8 digits starting with 6, 8 or 9
+    const cleanPhone = v => v.replace(/\s+/g, '');
+    const validPhone = v => /^[689]\d{7}$/.test(cleanPhone(v));
+    const validCode  = v => /^\d{6}$/.test(v.replace(/\s+/g, ''));
+
+    // Wire up an OTP flow for a given modal prefix ('login' / 'signup')
+    function setupOtp(prefix, opts) {
+        const phone = document.getElementById(prefix + 'Phone');
+        const code  = document.getElementById(prefix + 'Code');
+
+        document.getElementById(prefix + 'SendBtn').addEventListener('click', function () {
+            if (opts.requireName) {
+                const name = document.getElementById(prefix + 'Name');
+                if (!name.value.trim()) {
+                    document.getElementById(prefix + 'NameErr').style.display = 'block';
+                    return;
+                }
+                document.getElementById(prefix + 'NameErr').style.display = 'none';
+            }
+            if (!validPhone(phone.value)) {
+                document.getElementById(prefix + 'PhoneErr').style.display = 'block';
+                return;
+            }
+            document.getElementById(prefix + 'PhoneErr').style.display = 'none';
+            document.getElementById(prefix + 'SentTo').textContent = '+65 ' + cleanPhone(phone.value);
+            showStep(prefix, 2);
+            code.value = '';
+            code.focus();
+        });
+
+        document.getElementById(prefix + 'VerifyBtn').addEventListener('click', function () {
+            if (!validCode(code.value)) {
+                document.getElementById(prefix + 'CodeErr').style.display = 'block';
+                return;
+            }
+            document.getElementById(prefix + 'CodeErr').style.display = 'none';
+            opts.onVerified();
+        });
+
+        document.getElementById(prefix + 'Resend').addEventListener('click', function () {
+            showStep(prefix, 1);
+        });
+    }
+
+    setupOtp('login', {
+        requireName: false,
+        onVerified: function () {
+            loginUser('Friend');
+            closeModal('loginModal');
+            showStep('login', 1);
+        }
+    });
+
+    setupOtp('signup', {
+        requireName: true,
+        onVerified: function () {
+            const name = (document.getElementById('signupName').value || '').trim() || 'Friend';
+            loginUser(name);
+            closeModal('signupModal');
+            showStep('signup', 1);
+        }
+    });
+
+    renderAuth();
+})();
+</script>
 <script src="/js/cart.js"></script>
 
 </body>
