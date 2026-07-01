@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodHub - Checkout</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --brand: #e23744;
+            --brand-dark: #c52d39;
+            --pink: #fcd7dd;
+            --pink-soft: #ffeef1;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+        }
+
+        .brand-red { color: var(--brand); }
+
+        /* Navbar */
+        .navbar-brand img { height: 64px; }
+        .back-link { color: #6b4a4f; text-decoration: none; font-weight: 500; }
+        .back-link:hover { color: var(--brand); }
+
+        /* Cards */
+        .checkout-card {
+            background: #fff;
+            border: 1px solid #f0d0d4;
+            border-radius: 18px;
+            padding: 1.75rem;
+        }
+        .block-title { font-weight: 700; margin-bottom: 1.25rem; }
+
+        /* Order summary */
+        .summary-line { display: flex; justify-content: space-between; align-items: center; padding: 0.6rem 0; border-bottom: 1px solid #f0d0d4; font-size: 0.92rem; }
+        .summary-line .qty { color: #7a7a7a; font-weight: 500; }
+        .summary-total { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.15rem; padding-top: 1rem; }
+        .summary-empty { text-align: center; color: #7a7a7a; padding: 2.5rem 1rem; }
+        .summary-empty a { color: var(--brand); }
+
+        /* Payment form */
+        .form-label { font-weight: 500; font-size: 0.85rem; }
+        .form-control { border-radius: 10px; padding: 0.65rem 0.9rem; }
+        .form-control:focus { border-color: var(--brand); box-shadow: 0 0 0 0.2rem rgba(226, 55, 68, 0.15); }
+        .invalid-msg { color: var(--brand); font-size: 0.78rem; margin-top: 0.25rem; display: none; }
+        .field-error .form-control { border-color: var(--brand); }
+        .field-error .invalid-msg { display: block; }
+
+        .btn-pay {
+            background: var(--brand);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.8rem;
+            font-weight: 600;
+            width: 100%;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        .btn-pay:hover:not(:disabled) { background: var(--brand-dark); color: #fff; }
+        .btn-pay:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .demo-hint {
+            background: var(--pink-soft);
+            border: 1px dashed #e0a4ac;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            color: #6b4a4f;
+            padding: 0.7rem 0.9rem;
+        }
+        #payAlert { display: none; border-radius: 10px; font-size: 0.88rem; padding: 0.7rem 0.9rem; }
+        .lock-note { font-size: 0.75rem; color: #7a7a7a; }
+
+        /* Success state */
+        .success-wrap { display: none; text-align: center; }
+        .success-check {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: var(--pink-soft);
+            color: var(--brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            margin: 0 auto 1rem;
+        }
+        .success-sub { color: #6b4a4f; }
+        .order-id {
+            display: inline-block;
+            background: var(--pink-soft);
+            color: var(--brand);
+            font-weight: 700;
+            letter-spacing: 1px;
+            border-radius: 8px;
+            padding: 0.4rem 1rem;
+            margin: 0.5rem 0 1.25rem;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar bg-white py-3 shadow-sm">
+    <div class="container">
+        <a class="navbar-brand" href="/">
+            <img src="<%= images.logo %>" alt="FoodHub"
+                 onerror="this.style.display='none';document.getElementById('brandText').style.display='inline';">
+            <span id="brandText" style="display:none;">food<span class="brand-red">hub</span></span>
+        </a>
+        <a href="/menu" class="back-link">&larr; Back to menu</a>
+    </div>
+</nav>
+
+<section class="container py-5" id="checkoutMain">
+    <h1 class="fw-bold mb-4" style="font-size: clamp(1.8rem, 4vw, 2.6rem);">Checkout</h1>
+
+    <div class="row g-4">
+        <!-- Order summary (right on desktop, top on mobile) -->
+        <div class="col-lg-5 order-lg-2">
+            <div class="checkout-card">
+                <h5 class="block-title">Order summary</h5>
+                <div id="summaryLines"></div>
+                <div class="summary-total">
+                    <span>Total</span>
+                    <span id="summaryTotal">$0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payment form -->
+        <div class="col-lg-7 order-lg-1">
+            <div class="checkout-card">
+                <h5 class="block-title">Payment details</h5>
+
+                <div class="demo-hint mb-3">
+                    Demo only - no real payment is taken. Use card <strong>4242 4242 4242 4242</strong>,
+                    any future expiry, and any 3-digit CVV for an approved order.
+                </div>
+
+                <div class="alert alert-danger" id="payAlert" role="alert"></div>
+
+                <form id="payForm" novalidate>
+                    <div class="mb-3" id="f-name">
+                        <label class="form-label" for="name">Name</label>
+                        <input type="text" class="form-control" id="name" placeholder="Your name" autocomplete="name">
+                        <div class="invalid-msg">Enter your name.</div>
+                    </div>
+
+                    <div class="mb-3" id="f-email">
+                        <label class="form-label" for="email">Email</label>
+                        <input type="email" class="form-control" id="email" placeholder="you@example.com" autocomplete="email">
+                        <div class="invalid-msg">Enter a valid email address.</div>
+                    </div>
+
+                    <div class="mb-3" id="f-card">
+                        <label class="form-label" for="card">Card number</label>
+                        <input type="text" inputmode="numeric" class="form-control" id="card" placeholder="4242 4242 4242 4242" autocomplete="cc-number" maxlength="23">
+                        <div class="invalid-msg">Enter a valid card number.</div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-6 mb-3" id="f-exp">
+                            <label class="form-label" for="expiry">Expiry</label>
+                            <input type="text" inputmode="numeric" class="form-control" id="expiry" placeholder="MM/YY" autocomplete="cc-exp" maxlength="5">
+                            <div class="invalid-msg">Use MM/YY, in the future.</div>
+                        </div>
+                        <div class="col-6 mb-3" id="f-cvv">
+                            <label class="form-label" for="cvv">CVV</label>
+                            <input type="text" inputmode="numeric" class="form-control" id="cvv" placeholder="123" autocomplete="cc-csc" maxlength="4">
+                            <div class="invalid-msg">3 or 4 digits.</div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-pay mt-2" id="payBtn">Pay $0.00</button>
+                    <p class="lock-note text-center mt-2">&#128274; Simulated checkout for demonstration.</p>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Success state (shown after an approved payment) -->
+<section class="container py-5">
+    <div class="success-wrap" id="successWrap">
+        <div class="checkout-card mx-auto" style="max-width: 520px;">
+            <div class="success-check">&check;</div>
+            <h3 class="fw-bold">Payment approved</h3>
+            <p class="success-sub mb-1">Thanks, <span id="successName">there</span> - your order is confirmed.</p>
+            <div class="order-id" id="successOrderId">FH-000000</div>
+            <p class="mb-4">Total paid: <strong id="successTotal">$0.00</strong></p>
+            <a href="/menu" class="btn-pay d-inline-block text-decoration-none" style="width:auto; padding-left:2rem; padding-right:2rem;">Order more food</a>
+        </div>
+    </div>
+</section>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/js/cart.js"></script>
+<script>
+    // Elements on this page
+    const summaryLines = document.getElementById('summaryLines');
+    const summaryTotal = document.getElementById('summaryTotal');
+    const payBtn = document.getElementById('payBtn');
+    const payForm = document.getElementById('payForm');
+    const payAlert = document.getElementById('payAlert');
+    const cardInput = document.getElementById('card');
+    const expInput = document.getElementById('expiry');
+    const cvvInput = document.getElementById('cvv');
+
+    // Show the order summary using the cart from cart.js
+    function renderSummary() {
+        const cart = getCart();
+        if (cart.length === 0) {
+            summaryLines.innerHTML = '<div class="summary-empty">Your cart is empty.<br><a href="/menu">Browse the menu</a> to add dishes.</div>';
+            summaryTotal.textContent = formatPrice(0);
+            payBtn.disabled = true;
+            payBtn.textContent = 'Pay $0.00';
+            return;
+        }
+        let html = '';
+        cart.forEach(item => {
+            html += `
+                <div class="summary-line">
+                    <span>${item.name} <span class="qty">&times; ${item.qty}</span></span>
+                    <span>${formatPrice(item.price * item.qty)}</span>
+                </div>`;
+        });
+        summaryLines.innerHTML = html;
+        const total = cartTotal();
+        summaryTotal.textContent = formatPrice(total);
+        payBtn.disabled = false;
+        payBtn.textContent = 'Pay ' + formatPrice(total);
+    }
+
+    // Tidy up what the user types
+    cardInput.addEventListener('input', () => {
+        const digits = cardInput.value.replace(/\D/g, '').slice(0, 19);
+        cardInput.value = digits.replace(/(.{4})/g, '$1 ').trim();
+    });
+    expInput.addEventListener('input', () => {
+        let digits = expInput.value.replace(/\D/g, '').slice(0, 4);
+        if (digits.length >= 3) digits = digits.slice(0, 2) + '/' + digits.slice(2);
+        expInput.value = digits;
+    });
+    cvvInput.addEventListener('input', () => {
+        cvvInput.value = cvvInput.value.replace(/\D/g, '').slice(0, 4);
+    });
+
+    // Luhn check - the standard test every real card number passes
+    function luhnValid(number) {
+        const digits = number.replace(/\s+/g, '');
+        if (!/^\d{13,19}$/.test(digits)) return false;
+        let sum = 0;
+        let double = false;
+        for (let i = digits.length - 1; i >= 0; i--) {
+            let d = Number(digits[i]);
+            if (double) { d *= 2; if (d > 9) d -= 9; }
+            sum += d;
+            double = !double;
+        }
+        return sum % 10 === 0;
+    }
+
+    function expiryValid(value) {
+        const match = value.match(/^(\d{2})\/(\d{2})$/);
+        if (!match) return false;
+        const month = Number(match[1]);
+        const year = 2000 + Number(match[2]);
+        if (month < 1 || month > 12) return false;
+        const firstOfNextMonth = new Date(year, month, 1);
+        return firstOfNextMonth > new Date();
+    }
+
+    function setError(fieldId, hasError) {
+        document.getElementById(fieldId).classList.toggle('field-error', hasError);
+    }
+
+    // Returns the form data if valid, or null if something is wrong
+    function validateForm() {
+        const name = document.getElementById('name').value.trim();
+        const email = document.getElementById('email').value.trim();
+
+        const checks = {
+            'f-name': name.length > 0,
+            'f-email': /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
+            'f-card': luhnValid(cardInput.value),
+            'f-exp': expiryValid(expInput.value),
+            'f-cvv': /^\d{3,4}$/.test(cvvInput.value)
+        };
+
+        let valid = true;
+        for (const fieldId in checks) {
+            setError(fieldId, !checks[fieldId]);
+            if (!checks[fieldId]) valid = false;
+        }
+        if (!valid) return null;
+
+        return { name: name, email: email, card: cardInput.value, exp: expInput.value, cvv: cvvInput.value };
+    }
+
+    payForm.addEventListener('submit', event => {
+        event.preventDefault();
+        payAlert.style.display = 'none';
+
+        const data = validateForm();
+        if (!data) return;
+
+        const cart = getCart();
+        if (cart.length === 0) return;
+
+        // Show a short "Processing..." state before calling the server
+        payBtn.disabled = true;
+        const label = payBtn.textContent;
+        payBtn.textContent = 'Processing...';
+
+        setTimeout(() => {
+            fetch('/pay', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    items: cart,
+                    customer: { name: data.name, email: data.email },
+                    card: { number: data.card, expiry: data.exp, cvv: data.cvv }
+                })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    clearCart();
+                    document.getElementById('checkoutMain').style.display = 'none';
+                    document.getElementById('successName').textContent = result.name || 'there';
+                    document.getElementById('successOrderId').textContent = result.orderId;
+                    document.getElementById('successTotal').textContent = formatPrice(result.total);
+                    document.getElementById('successWrap').style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                } else {
+                    payAlert.textContent = result.message || 'Payment failed. Please try again.';
+                    payAlert.style.display = 'block';
+                    payBtn.disabled = false;
+                    payBtn.textContent = label;
+                }
+            })
+            .catch(() => {
+                payAlert.textContent = 'Could not reach the server. Please try again.';
+                payAlert.style.display = 'block';
+                payBtn.disabled = false;
+                payBtn.textContent = label;
+            });
+        }, 1200);
+    });
+
+    renderSummary();
+</script>
+
+</body>
+</html>
