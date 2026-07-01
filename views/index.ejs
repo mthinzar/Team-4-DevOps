@@ -183,15 +183,8 @@
         }
 
         @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-14px);
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-14px); }
         }
 
         /* Section heading */
@@ -268,7 +261,6 @@
             flex-grow: 1;
             display: -webkit-box;
             -webkit-line-clamp: 2;
-            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -317,7 +309,7 @@
             background: var(--pink-soft);
         }
 
-        .opt-radio-card input:checked+span {
+        .opt-radio-card input:checked + span {
             font-weight: 600;
         }
 
@@ -637,8 +629,7 @@
                 <div class="col-6 col-md-4 col-lg">
                     <div class="dish-card">
                         <div class="dish-img-wrap">
-                            <img src="<%= dish.image %>" class="dish-img" alt="<%= dish.name %>"
-                                onerror="this.src='https://img.icons8.com/color/96/hamburger.png';">
+                            <img src="<%= dish.image %>" class="dish-img" alt="<%= dish.name %>" onerror="this.src='https://img.icons8.com/color/96/hamburger.png';">
                         </div>
 
                         <div class="dish-info-panel text-center">
@@ -649,13 +640,14 @@
                                 <%= dish.description %>
                             </p>
                             <div class="d-flex flex-column align-items-center justify-content-center mt-auto">
-                                <div class="dish-price mb-2">$<%= dish.price.toFixed(2) %>
-                                </div>
-
+                                <div class="dish-price mb-2">$<%= dish.price.toFixed(2) %></div>
+                                
                                 <!-- Integrated dataset options for home page clicks -->
-                                <button class="btn btn-add-cart add-to-cart mb-2 py-1.5 px-3"
-                                    data-name="<%= dish.name %>" data-price="<%= dish.price %>"
-                                    data-image="<%= dish.image %>" data-stall="Popular Dishes"
+                                <button class="btn btn-add-cart add-to-cart mb-2 py-1.5 px-3" 
+                                    data-name="<%= dish.name %>"
+                                    data-price="<%= dish.price %>" 
+                                    data-image="<%= dish.image %>"
+                                    data-stall="Popular Dishes"
                                     data-options='<%= JSON.stringify(dish.options || null) %>'>
                                     Add to cart
                                 </button>
@@ -663,7 +655,7 @@
                         </div>
                     </div>
                 </div>
-                <% }) %>
+            <% }) %>
         </div>
     </section>
 
@@ -702,11 +694,9 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 rounded-4 overflow-hidden shadow-lg">
                 <div class="modal-header border-0 bg-light p-3 position-relative">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
-                        data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
                     <div class="d-flex align-items-center gap-3">
-                        <img id="modalFoodImg" src="" alt="" class="rounded-3 shadow-sm"
-                            style="width: 64px; height: 64px; object-fit: cover;">
+                        <img id="modalFoodImg" src="" alt="" class="rounded-3 shadow-sm" style="width: 64px; height: 64px; object-fit: cover;">
                         <div>
                             <h5 class="modal-title fw-bold" id="customizeModalLabel">Customize Item</h5>
                             <div class="text-muted small" id="modalFoodStall">Stall Name</div>
@@ -738,16 +728,11 @@
                 </div>
                 <div class="modal-footer border-0 p-3 bg-light d-flex align-items-center justify-content-between">
                     <div class="d-flex align-items-center gap-2">
-                        <button type="button"
-                            class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none"
-                            id="modalQtyMinus">-</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none" id="modalQtyMinus">-</button>
                         <span class="fw-bold fs-5 px-1" id="modalQty">1</span>
-                        <button type="button"
-                            class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none"
-                            id="modalQtyPlus">+</button>
+                        <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-3 fw-bold shadow-none" id="modalQtyPlus">+</button>
                     </div>
-                    <button type="button" class="btn btn-danger px-4 py-2 border-0" id="btnConfirmAdd"
-                        style="background-color: var(--brand);">Add to Cart - $0.00</button>
+                    <button type="button" class="btn btn-danger px-4 py-2 border-0" id="btnConfirmAdd" style="background-color: var(--brand);">Add to Cart - $0.00</button>
                 </div>
             </div>
         </div>
@@ -758,8 +743,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="auth-header">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
-                        data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                     <h5 class="fw-bold text-dark fs-4">Welcome Back</h5>
                     <p>Log in to continue ordering</p>
                 </div>
@@ -785,8 +770,8 @@
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="auth-header">
-                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none"
-                        data-bs-dismiss="modal" aria-label="Close"></button>
+                    <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
                     <h5 class="fw-bold text-dark fs-4">Create Account</h5>
                     <p>Join FoodHub and start ordering</p>
                 </div>
@@ -820,10 +805,7 @@
                     <span class="fw-semibold">Subtotal</span>
                     <span class="fw-bold fs-5 text-dark" id="cartSubtotal">$0.00</span>
                 </div>
-                <a href="/checkout"
-                    class="btn btn-checkout w-100 border-0 d-flex justify-content-center align-items-center"
-                    style="background-color: var(--brand); color:#fff; padding: 0.65rem; border-radius:10px; font-weight:600; text-decoration:none;">Go
-                    to checkout</a>
+                <a href="/checkout" class="btn btn-checkout w-100 border-0 d-flex justify-content-center align-items-center" style="background-color: var(--brand); color:#fff; padding: 0.65rem; border-radius:10px; font-weight:600; text-decoration:none;">Go to checkout</a>
             </div>
         </div>
     </div>
@@ -876,7 +858,7 @@
             if (savedCart) {
                 try {
                     cart = JSON.parse(savedCart);
-                } catch (e) {
+                } catch(e) {
                     cart = [];
                 }
             }
@@ -914,11 +896,11 @@
                 const price = parseFloat(btn.dataset.price);
                 const image = btn.dataset.image;
                 const stall = btn.dataset.stall;
-
+                
                 let options = null;
                 try {
                     options = JSON.parse(btn.dataset.options);
-                } catch (err) {
+                } catch(err) {
                     options = null;
                 }
 
@@ -959,7 +941,7 @@
                 `).join('');
 
                 sizeOptions.querySelectorAll('.opt-radio-card').forEach(card => {
-                    card.addEventListener('click', function () {
+                    card.addEventListener('click', function() {
                         sizeOptions.querySelectorAll('.opt-radio-card').forEach(c => c.classList.remove('active'));
                         this.classList.add('active');
                     });
@@ -996,7 +978,7 @@
                 `).join('');
 
                 addonsOptions.querySelectorAll('.opt-radio-card').forEach(card => {
-                    card.addEventListener('click', function () {
+                    card.addEventListener('click', function() {
                         const cb = this.querySelector('input[type="checkbox"]');
                         setTimeout(() => {
                             if (cb.checked) {
@@ -1016,7 +998,7 @@
             customizeModal.show();
         }
 
-        window.selectSpicyPill = function (element) {
+        window.selectSpicyPill = function(element) {
             spicyOptions.querySelectorAll('.spicy-btn-pill').forEach(btn => {
                 btn.classList.remove('active', 'btn-danger', 'text-white');
             });
@@ -1180,7 +1162,7 @@
             }
         }
 
-        window.changeQty = function (index, diff) {
+        window.changeQty = function(index, diff) {
             cart[index].qty += diff;
             if (cart[index].qty <= 0) {
                 cart.splice(index, 1);
@@ -1188,7 +1170,7 @@
             updateCart();
         };
 
-        window.removeItem = function (index) {
+        window.removeItem = function(index) {
             cart.splice(index, 1);
             updateCart();
         };
