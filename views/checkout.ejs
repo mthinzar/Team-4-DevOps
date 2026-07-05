@@ -103,6 +103,43 @@
             padding: 0.4rem 1rem;
             margin: 0.5rem 0 1.25rem;
         }
+
+        /* Out-of-stock + refund screens */
+        .oos-wrap, .refund-wrap { display: none; text-align: center; }
+        .oos-icon {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: var(--pink-soft);
+            color: var(--brand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.6rem;
+            font-weight: 800;
+            margin: 0 auto 1rem;
+        }
+        .oos-list { list-style: none; padding: 0; margin: 0 auto 1.25rem; max-width: 320px; }
+        .oos-list li {
+            background: var(--pink-soft);
+            color: var(--brand);
+            font-weight: 600;
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .btn-outline {
+            background: #fff;
+            color: var(--brand);
+            border: 1px solid var(--brand);
+            border-radius: 10px;
+            padding: 0.8rem;
+            font-weight: 600;
+            width: 100%;
+            font-size: 1rem;
+            transition: 0.2s;
+        }
+        .btn-outline:hover { background: var(--pink-soft); }
     </style>
 </head>
 <body>
@@ -201,6 +238,38 @@
     </div>
 </section>
 
+<!-- Out-of-stock resolution (shown if an item sold out after payment) -->
+<section class="container py-5">
+    <div class="oos-wrap" id="oosWrap">
+        <div class="checkout-card mx-auto" style="max-width: 560px;">
+            <div class="oos-icon">!</div>
+            <h3 class="fw-bold">Some items are out of stock</h3>
+            <p class="success-sub mb-3">Your payment went through, but we can't prepare the item(s) below:</p>
+            <ul class="oos-list" id="oosList"></ul>
+            <p class="mb-4">Would you like to change your order, or get your money back?</p>
+            <div class="d-grid gap-2" style="max-width: 360px; margin: 0 auto;">
+                <button type="button" class="btn-pay" id="changeOrderBtn">Change my order</button>
+                <button type="button" class="btn-outline" id="refundBtn">Request a refund</button>
+            </div>
+            <div class="alert alert-danger mt-3" id="refundError" style="display:none;"></div>
+        </div>
+    </div>
+</section>
+
+<!-- Refund confirmation -->
+<section class="container py-5">
+    <div class="refund-wrap" id="refundWrap">
+        <div class="checkout-card mx-auto" style="max-width: 520px;">
+            <div class="success-check">&check;</div>
+            <h3 class="fw-bold">Refund processed</h3>
+            <p class="success-sub mb-1">Your money is on its way back to your card.</p>
+            <div class="order-id" id="refundOrderId">FH-000000</div>
+            <p class="mb-4">Refunded: <strong id="refundAmount">$0.00</strong></p>
+            <a href="/menu" class="btn-pay d-inline-block text-decoration-none" style="width:auto; padding-left:2rem; padding-right:2rem;">Back to menu</a>
+        </div>
+    </div>
+</section>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="/js/cart.js"></script>
 <script>
@@ -213,6 +282,9 @@
     const cardInput = document.getElementById('card');
     const expInput = document.getElementById('expiry');
     const cvvInput = document.getElementById('cvv');
+
+    // Holds the order details while an out-of-stock order is being resolved
+    let currentOrder = null;
 
     // Show the order summary using the cart from cart.js
     function renderSummary() {
@@ -333,13 +405,30 @@
             .then(response => response.json())
             .then(result => {
                 if (result.success) {
-                    clearCart();
-                    document.getElementById('checkoutMain').style.display = 'none';
-                    document.getElementById('successName').textContent = result.name || 'there';
-                    document.getElementById('successOrderId').textContent = result.orderId;
-                    document.getElementById('successTotal').textContent = formatPrice(result.total);
-                    document.getElementById('successWrap').style.display = 'block';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    // Payment went through — save this order to the history
+                    saveOrder({
+                        id: result.orderId,
+                        date: new Date().toISOString(),
+                        items: cart,
+                        total: result.total,
+                        name: result.name,
+                        status: 'Paid'
+                    });
+
+                    if (result.outOfStock && result.outOfStock.length > 0) {
+                        // Some dishes sold out — ask the customer to change or refund
+                        currentOrder = { id: result.orderId, total: result.total, outOfStock: result.outOfStock };
+                        showOutOfStock(result.outOfStock);
+                    } else {
+                        // Everything is available — show the confirmation
+                        clearCart();
+                        document.getElementById('checkoutMain').style.display = 'none';
+                        document.getElementById('successName').textContent = result.name || 'there';
+                        document.getElementById('successOrderId').textContent = result.orderId;
+                        document.getElementById('successTotal').textContent = formatPrice(result.total);
+                        document.getElementById('successWrap').style.display = 'block';
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
                 } else {
                     payAlert.textContent = result.message || 'Payment failed. Please try again.';
                     payAlert.style.display = 'block';
@@ -354,6 +443,59 @@
                 payBtn.textContent = label;
             });
         }, 1200);
+    });
+
+    // Show the out-of-stock screen and list the sold-out dishes
+    function showOutOfStock(items) {
+        document.getElementById('checkoutMain').style.display = 'none';
+        document.getElementById('oosList').innerHTML = items.map(name => `<li>${name}</li>`).join('');
+        document.getElementById('oosWrap').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    // "Change my order" — drop the sold-out items and go back to the menu to pick again
+    document.getElementById('changeOrderBtn').addEventListener('click', () => {
+        updateOrderStatus(currentOrder.id, 'Cancelled');
+        removeItemsFromCart(currentOrder.outOfStock);
+        window.location.href = '/menu';
+    });
+
+    // "Request a refund" — call the (fake) refund endpoint, then show a confirmation
+    const refundBtn = document.getElementById('refundBtn');
+    refundBtn.addEventListener('click', () => {
+        const refundError = document.getElementById('refundError');
+        refundError.style.display = 'none';
+        refundBtn.disabled = true;
+        refundBtn.textContent = 'Processing...';
+
+        fetch('/refund', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderId: currentOrder.id, total: currentOrder.total })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                updateOrderStatus(currentOrder.id, 'Refunded');
+                clearCart();
+                document.getElementById('oosWrap').style.display = 'none';
+                document.getElementById('refundOrderId').textContent = currentOrder.id;
+                document.getElementById('refundAmount').textContent = formatPrice(result.refunded);
+                document.getElementById('refundWrap').style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            } else {
+                refundError.textContent = result.message || 'Refund failed. Please try again.';
+                refundError.style.display = 'block';
+                refundBtn.disabled = false;
+                refundBtn.textContent = 'Request a refund';
+            }
+        })
+        .catch(() => {
+            refundError.textContent = 'Could not reach the server. Please try again.';
+            refundError.style.display = 'block';
+            refundBtn.disabled = false;
+            refundBtn.textContent = 'Request a refund';
+        });
     });
 
     renderSummary();

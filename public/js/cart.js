@@ -56,6 +56,11 @@ function removeFromCart(name) {
     saveCart(getCart().filter(d => d.name !== name));
 }
 
+// Remove several dishes from the cart at once (used when items are out of stock)
+function removeItemsFromCart(names) {
+    saveCart(getCart().filter(d => !names.includes(d.name)));
+}
+
 function clearCart() {
     saveCart([]);
 }
@@ -113,6 +118,39 @@ function openCartDrawer() {
     const drawer = document.getElementById('cartDrawer');
     if (drawer && window.bootstrap) {
         bootstrap.Offcanvas.getOrCreateInstance(drawer).show();
+    }
+}
+
+// ============================================================
+//  Order history — also kept in the browser with localStorage.
+// ============================================================
+
+const ORDERS_KEY = 'foodhub_orders';
+
+// Read all past orders (newest first)
+function getOrders() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(ORDERS_KEY));
+        return Array.isArray(saved) ? saved : [];
+    } catch (e) {
+        return [];
+    }
+}
+
+// Save a new order to the top of the history list
+function saveOrder(order) {
+    const orders = getOrders();
+    orders.unshift(order);
+    localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
+}
+
+// Change the status of an order that was already saved (e.g. to 'Refunded')
+function updateOrderStatus(orderId, newStatus) {
+    const orders = getOrders();
+    const order = orders.find(o => o.id === orderId);
+    if (order) {
+        order.status = newStatus;
+        localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
     }
 }
 

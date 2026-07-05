@@ -69,15 +69,45 @@ app.post('/pay', (req, res) => {
         return res.json({ success: false, message: 'Card declined. Check the number and try again.' });
     }
 
-    // 4. Charge successful hand back an order number a tracking system could use later
+    // 4. Check stock — a dish may have sold out since it was added to the cart
+    const outOfStock = [];
+    items.forEach(item => {
+        const dish = popularDishes.find(d => d.name === item.name);
+        if (!dish || dish.stock < Number(item.qty)) {
+            outOfStock.push(item.name);
+        }
+    });
+
+    // 5. Payment goes through (the money is taken). We hand back an order number
+    //    plus any out-of-stock items, so the customer can change or refund.
     const orderId = 'FH-' + Date.now().toString().slice(-6);
     return res.json({
         success: true,
         orderId,
         total: Number(total.toFixed(2)),
         name: customer && customer.name ? customer.name : 'Guest',
-        status: 'paid'
+        outOfStock: outOfStock
     });
+});
+
+// Fake refund endpoint (DEMO ONLY) — pretends to send the money back
+app.post('/refund', (req, res) => {
+    const { orderId, total } = req.body || {};
+    if (!orderId) {
+        return res.status(400).json({ success: false, message: 'Missing order id.' });
+    }
+    return res.json({
+        success: true,
+        orderId: orderId,
+        refunded: Number(total) || 0,
+        message: 'Refund processed. The money will be returned to your card.'
+    });
+});
+
+// Order history page. Orders live in the browser (localStorage), so this route
+// just renders the page shell; the list is filled in client-side from cart.js.
+app.get('/orders', (req, res) => {
+    res.render('orders', { images });
 });
 
 app.listen(PORT, () => {
