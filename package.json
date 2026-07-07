@@ -1,0 +1,21 @@
+{
+  "name": "team-4-devops",
+  "version": "1.0.0",
+  "description": "FoodHub - merged app",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "seed": "node seed.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "ejs": "^6.0.1",
+    "express": "^5.2.1",
+    "express-session": "^1.18.0",
+    "mongodb": "^7.4.0"
+  },
+  "type": "commonjs"
+}
