@@ -1,13 +1,17 @@
 // ============================================================
-//  Central place for images and popular dishes shown on the home page.
-//  (Stall/food data lives in MongoDB — see seed.js and db.js.)
+// Central place for images and popular dishes shown on the home page.
+// Stall/food data lives in MongoDB — see seed.js and db.js.
+// Edit image paths or dish information here — used across the app.
 // ============================================================
 
+// --- Site images (logo, hero banner) ---
 const images = {
     logo: '/images/logo.png',
     hero: '/images/hero.png'
 };
 
+// --- Dishes shown on the home page & menu page ---
+// Each dish has a `category` used by the menu filter pills.
 const popularDishes = [
     {
         name: 'Hamburger',
