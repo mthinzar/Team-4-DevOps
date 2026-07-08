@@ -20,7 +20,7 @@
   },
   "homepage": "https://github.com/mthinzar/Team-4-DevOps#readme",
   "dependencies": {
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "ejs": "^6.0.1",
     "express": "^5.2.1",
     "express-session": "^1.18.0",
