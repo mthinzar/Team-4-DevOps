@@ -588,14 +588,15 @@
             .then(result => {
                 if (result.success) {
                     clearCart();
+                    const orders = result.orders || [];
                     document.getElementById('checkoutMain').style.display = 'none';
                     document.getElementById('successName').textContent = result.name || 'there';
-                    document.getElementById('successOrderId').textContent = result.orderId;
+                    document.getElementById('successOrderId').textContent = orders.map(o => o.orderId).join(', ');
                     document.getElementById('successTotal').textContent = formatPrice(result.total);
                     document.getElementById('successWrap').style.display = 'block';
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                     setTimeout(() => {
-                        window.location.href = '/track/' + result.orderId;
+                        window.location.href = orders.length === 1 ? '/track/' + orders[0].orderId : '/orders';
                     }, 1500);
                 } else {
                     payAlert.textContent = result.message || 'Payment failed. Please try again.';

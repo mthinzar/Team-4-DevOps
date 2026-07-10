@@ -104,6 +104,23 @@
             color: var(--brand);
         }
 
+        .badge-order-status {
+            display: inline-block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: capitalize;
+            border-radius: 999px;
+            padding: 0.3rem 0.9rem;
+            background: var(--pink-soft);
+            color: var(--brand);
+        }
+        .badge-order-status[data-status="ready"] { background: #d1f5df; color: #198754; }
+        .badge-order-status[data-status="completed"],
+        .badge-order-status[data-status="collected"] { background: #e2e3e5; color: #41464b; }
+        .badge-order-status[data-status="cancelled"] { background: #f8d7da; color: #842029; }
+        .badge-order-status[data-status="pending"] { background: #fff3cd; color: #997404; }
+        .badge-order-status[data-status="accepted"] { background: #cfe2ff; color: #084298; }
+
         .collected-banner {
             background: #d1f5df;
             color: #198754;
@@ -224,7 +241,8 @@
         <p class="text-muted small">Order Reference: <span id="lblOrderId" class="fw-semibold"><%= order ? order.orderId : '--------' %></span></p>
 
         <% if (order) {
-            const isCollected = order.status === 'collected';
+            const isDone = order.status === 'completed' || order.status === 'collected';
+            const isCancelled = order.status === 'cancelled';
         %>
         <div class="my-4">
             <span class="text-muted text-uppercase fw-bold small d-block" style="letter-spacing: 0.5px;">Your Queue Number</span>
@@ -232,17 +250,17 @@
         </div>
 
         <div class="progress-pipeline">
-            <div class="pipeline-fill" id="pipelineFill" style="<%= isCollected ? 'width:100%;' : '' %>"></div>
+            <div class="pipeline-fill" id="pipelineFill" style="<%= isDone ? 'width:100%;' : '' %>"></div>
             <div class="text-center">
                 <div class="step-node active" id="node-1">⏳</div>
                 <span class="step-label">Received</span>
             </div>
             <div class="text-center">
-                <div class="step-node <%= isCollected ? 'active' : '' %>" id="node-2">🍳</div>
+                <div class="step-node <%= (isDone || order.status === 'preparing' || order.status === 'ready') ? 'active' : '' %>" id="node-2">🍳</div>
                 <span class="step-label">Preparing</span>
             </div>
             <div class="text-center">
-                <div class="step-node <%= isCollected ? 'active' : '' %>" id="node-3">📦</div>
+                <div class="step-node <%= (isDone || order.status === 'ready') ? 'active' : '' %>" id="node-3">📦</div>
                 <span class="step-label">Ready</span>
             </div>
         </div>
@@ -263,7 +281,17 @@
             </div>
         </div>
 
-        <% if (isCollected) { %>
+        <div class="mb-2">
+            <span class="badge-order-status" id="lblOrderStatus" data-status="<%= order.status %>">
+                <%= order.status.charAt(0).toUpperCase() + order.status.slice(1) %>
+            </span>
+        </div>
+
+        <% if (isCancelled) { %>
+            <div class="alert alert-danger text-start mb-4" style="border-radius:12px;">
+                This order was cancelled by the stall. If you were charged, please contact support for a refund.
+            </div>
+        <% } else if (isDone) { %>
             <div class="collected-banner mb-4">✅ Collected — enjoy your meal!</div>
             <button type="button" class="btn-rate-again mb-4" id="btnRateAgain">⭐ Rate this order</button>
         <% } else { %>
@@ -278,6 +306,11 @@
             <div id="collectedStateBlock" class="mb-4" style="display:none;">
                 <div class="collected-banner mb-4">✅ Collected — enjoy your meal!</div>
                 <button type="button" class="btn-rate-again" id="btnRateAgainAfterCollect">⭐ Rate this order</button>
+            </div>
+            <div id="cancelledStateBlock" class="mb-4" style="display:none;">
+                <div class="alert alert-danger text-start mb-0" style="border-radius:12px;">
+                    This order was just cancelled by the stall. If you were charged, please contact support for a refund.
+                </div>
             </div>
         <% } %>
 
@@ -334,44 +367,44 @@
 <script>
     const orderId = <%- JSON.stringify(order.orderId) %>;
     const orderItems = <%- JSON.stringify(order.items) %>;
-    const isCollected = <%= order.status === 'collected' ? 'true' : 'false' %>;
+    const DONE_STATUSES = ['completed', 'collected'];
+    let currentStatus = <%- JSON.stringify(order.status || 'pending') %>;
+    const isDoneInitially = DONE_STATUSES.includes(currentStatus);
+    const isCancelledInitially = currentStatus === 'cancelled';
 
     document.addEventListener("DOMContentLoaded", () => {
-        if (isCollected) {
+        if (isDoneInitially) {
             document.getElementById('btnRateAgain').addEventListener('click', () => showReviewPrompt());
             return;
         }
+        if (isCancelledInitially) {
+            return; // static "cancelled" message already rendered server-side
+        }
 
-        const targetTimestamp = Math.floor(<%= order.readyAt %> / 1000);
-        const initialTotalDuration = <%= order.prepTimeSeconds %>;
+        let targetTimestamp = Math.floor(<%= order.readyAt %> / 1000);
+        let initialTotalDuration = <%= order.prepTimeSeconds %>;
 
         const node2 = document.getElementById('node-2');
         const node3 = document.getElementById('node-3');
         const fill = document.getElementById('pipelineFill');
         const clock = document.getElementById('lblCountdown');
         const collectBlock = document.getElementById('collectBlock');
+        const statusBadge = document.getElementById('lblOrderStatus');
 
         let timerEngine = null;
-        let announcedReady = false;
+        let pollEngine = null;
 
         function tick() {
             const now = Math.floor(Date.now() / 1000);
             const remaining = targetTimestamp - now;
 
             if (remaining <= 0) {
-                if (timerEngine) clearInterval(timerEngine);
-                clock.textContent = "Ready for Pick Up!";
-                clock.style.color = "#198754";
-                fill.style.width = "84%";
+                // The estimate has elapsed, but "Ready" is confirmed by the stall
+                // (via polling below), not purely by this countdown.
+                clock.textContent = currentStatus === 'ready' ? 'Ready for Pick Up!' : 'Almost ready…';
+                clock.style.color = currentStatus === 'ready' ? '#198754' : '#1a1a1a';
+                fill.style.width = '84%';
                 node2.classList.add('active');
-                node3.classList.add('active');
-                collectBlock.style.display = 'block';
-
-                // Grab the customer's attention if they've switched tabs while waiting
-                if (!announcedReady) {
-                    announcedReady = true;
-                    if (document.hidden) document.title = '🔔 Order Ready! - FoodHub';
-                }
                 return;
             }
 
@@ -384,11 +417,46 @@
             fill.style.width = `${progressPercentage}%`;
 
             if (progressPercentage >= 15) node2.classList.add('active');
-            if (progressPercentage >= 75) node3.classList.add('active');
+        }
+
+        function applyStatus(status) {
+            currentStatus = status;
+            statusBadge.dataset.status = status;
+            statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+            if (status === 'ready') {
+                node3.classList.add('active');
+                collectBlock.style.display = 'block';
+                if (document.hidden) document.title = '🔔 Order Ready! - FoodHub';
+            } else if (DONE_STATUSES.includes(status)) {
+                markOrderCollectedInUI();
+                if (timerEngine) clearInterval(timerEngine);
+                if (pollEngine) clearInterval(pollEngine);
+            } else if (status === 'cancelled') {
+                if (timerEngine) clearInterval(timerEngine);
+                if (pollEngine) clearInterval(pollEngine);
+                document.getElementById('countdownBlock').style.display = 'none';
+                collectBlock.style.display = 'none';
+                document.getElementById('cancelledStateBlock').style.display = 'block';
+            }
+        }
+
+        function pollStatus() {
+            fetch(`/api/orders/${orderId}/status`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) return;
+                    if (data.readyAt) targetTimestamp = Math.floor(data.readyAt / 1000);
+                    if (data.prepTimeSeconds) initialTotalDuration = data.prepTimeSeconds;
+                    if (data.status !== currentStatus) applyStatus(data.status);
+                })
+                .catch(() => {});
         }
 
         tick();
         timerEngine = setInterval(tick, 1000);
+        pollEngine = setInterval(pollStatus, 5000);
+        pollStatus();
 
         document.addEventListener('visibilitychange', () => {
             if (!document.hidden) document.title = 'FoodHub - Live Order Status';

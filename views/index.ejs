@@ -453,6 +453,32 @@
             text-decoration: underline;
         }
 
+        /* Customer / Merchant role tabs inside login & signup modals */
+        .role-tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--pink-soft);
+            border-radius: 12px;
+            padding: 0.3rem;
+            margin-bottom: 1.25rem;
+        }
+        .role-tab {
+            flex: 1;
+            background: none;
+            border: none;
+            border-radius: 9px;
+            padding: 0.5rem 0.5rem;
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: #6b4a4f;
+            transition: 0.2s;
+        }
+        .role-tab.active {
+            background: #fff;
+            color: var(--brand);
+            box-shadow: 0 2px 6px rgba(226,55,68,0.15);
+        }
+
         /* Footer */
         footer {
             background: #1a1a1a;
@@ -865,7 +891,10 @@
     <div class="row g-3">
         <% stalls.forEach(stall => { %>
             <div class="col-6 col-md-3">
-                <a href="/menu?stall=<%= stall.id %>" class="store-card">
+                <a href="/menu?stall=<%= stall.id %>" class="store-card" style="position:relative;">
+                    <% if (stall.isOpen === false) { %>
+                        <span style="position:absolute; top:8px; right:8px; background:#842029; color:#fff; font-size:0.62rem; font-weight:700; text-transform:uppercase; padding:0.2rem 0.5rem; border-radius:6px; z-index:2;">Closed</span>
+                    <% } %>
                     <div class="store-img-wrap">
                         <% if (stall.image) { %>
                             <img
@@ -948,10 +977,16 @@
 
                 <img src="<%= images.logo %>" alt="FoodHub">
                 <h5>Welcome Back</h5>
-                <p>Log in with your phone number</p>
+                <p>Log in to continue</p>
             </div>
 
             <div class="auth-body">
+                <div class="role-tabs" data-modal="login">
+                    <button type="button" class="role-tab active" data-role="customer">🙋 Customer</button>
+                    <button type="button" class="role-tab" data-role="merchant">🏪 Merchant</button>
+                </div>
+
+                <div id="loginCustomerPane">
                 <!-- Step 1: phone number -->
                 <div id="loginStep1">
                     <div class="mb-3">
@@ -1029,6 +1064,25 @@
                         Sign Up
                     </a>
                 </p>
+                </div>
+
+                <!-- Merchant login -->
+                <div id="loginMerchantPane" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="merchantLoginEmail" class="form-control" placeholder="you@stall.com" autocomplete="email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Password</label>
+                        <input type="password" id="merchantLoginPassword" class="form-control" placeholder="Your password" autocomplete="current-password">
+                    </div>
+                    <div class="alert alert-danger py-2 small" id="merchantLoginError" style="display:none;"></div>
+                    <button type="button" id="merchantLoginBtn" class="btn-auth">Login as Merchant</button>
+                    <p class="auth-switch">
+                        New merchant?
+                        <a data-bs-toggle="modal" data-bs-target="#signupModal" data-bs-dismiss="modal" data-preselect-role="merchant">Sign Up</a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -1052,6 +1106,12 @@
             </div>
 
             <div class="auth-body">
+                <div class="role-tabs" data-modal="signup">
+                    <button type="button" class="role-tab active" data-role="customer">🙋 Customer</button>
+                    <button type="button" class="role-tab" data-role="merchant">🏪 Merchant</button>
+                </div>
+
+                <div id="signupCustomerPane">
                 <!-- Step 1: name + phone -->
                 <div id="signupStep1">
                     <div class="mb-3">
@@ -1145,6 +1205,47 @@
                         Login
                     </a>
                 </p>
+                </div>
+
+                <!-- Merchant signup -->
+                <div id="signupMerchantPane" style="display:none;">
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" id="merchantSignupEmail" class="form-control" placeholder="you@stall.com" autocomplete="email">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="merchantSignupPassword" class="form-control" autocomplete="new-password">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Confirm</label>
+                            <input type="password" id="merchantSignupConfirmPassword" class="form-control" autocomplete="new-password">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Which stall are you managing?</label>
+                        <select id="merchantStallSelect" class="form-select">
+                            <option value="">Loading stalls…</option>
+                        </select>
+                    </div>
+                    <div id="newStallFields" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">New Stall Name</label>
+                            <input type="text" id="newStallName" class="form-control" placeholder="e.g. Bubble Tea Corner">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Stall Picture (optional)</label>
+                            <input type="file" id="newStallImage" class="form-control" accept="image/*">
+                        </div>
+                    </div>
+                    <div class="alert alert-danger py-2 small" id="merchantSignupError" style="display:none;"></div>
+                    <button type="button" id="merchantSignupBtn" class="btn-auth">Create Merchant Account</button>
+                    <p class="auth-switch">
+                        Already have a merchant account?
+                        <a data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal" data-preselect-role="merchant">Login</a>
+                    </p>
+                </div>
             </div>
         </div>
     </div>
@@ -1369,6 +1470,138 @@
 
         renderAuth();
     })();
+</script>
+
+<!-- Customer / Merchant role tabs + merchant login & signup -->
+<script>
+(function () {
+    function showPane(modal, role) {
+        document.getElementById(`${modal}CustomerPane`).style.display = role === 'customer' ? 'block' : 'none';
+        document.getElementById(`${modal}MerchantPane`).style.display = role === 'merchant' ? 'block' : 'none';
+    }
+
+    function selectRole(modal, role) {
+        const group = document.querySelector(`.role-tabs[data-modal="${modal}"]`);
+        if (!group) return;
+        group.querySelectorAll('.role-tab').forEach(t => t.classList.toggle('active', t.dataset.role === role));
+        showPane(modal, role);
+        if (role === 'merchant' && modal === 'signup') loadAvailableStalls();
+    }
+
+    document.querySelectorAll('.role-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+            selectRole(this.closest('.role-tabs').dataset.modal, this.dataset.role);
+        });
+    });
+
+    // Jumping from "New merchant? Sign Up" (or vice versa) keeps the Merchant tab selected
+    document.querySelectorAll('[data-preselect-role]').forEach(link => {
+        link.addEventListener('click', () => {
+            setTimeout(() => {
+                selectRole('login', link.dataset.preselectRole);
+                selectRole('signup', link.dataset.preselectRole);
+            }, 150);
+        });
+    });
+
+    let stallsLoaded = false;
+    function loadAvailableStalls() {
+        if (stallsLoaded) return;
+        const select = document.getElementById('merchantStallSelect');
+        fetch('/api/merchant/available-stalls')
+            .then(r => r.json())
+            .then(data => {
+                stallsLoaded = true;
+                let html = '<option value="">Select a stall…</option>';
+                (data.stalls || []).forEach(s => {
+                    html += `<option value="${s.id}">${s.emoji || ''} ${s.name}</option>`;
+                });
+                html += '<option value="__new__">+ Create a New Stall</option>';
+                select.innerHTML = html;
+            })
+            .catch(() => {
+                select.innerHTML = '<option value="">Could not load stalls</option><option value="__new__">+ Create a New Stall</option>';
+            });
+    }
+
+    document.getElementById('merchantStallSelect').addEventListener('change', function () {
+        document.getElementById('newStallFields').style.display = this.value === '__new__' ? 'block' : 'none';
+    });
+
+    document.getElementById('merchantLoginBtn').addEventListener('click', function () {
+        const email = document.getElementById('merchantLoginEmail').value.trim();
+        const password = document.getElementById('merchantLoginPassword').value;
+        const errEl = document.getElementById('merchantLoginError');
+        errEl.style.display = 'none';
+
+        this.disabled = true;
+        fetch('/merchant/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+        })
+        .then(r => r.json())
+        .then(result => {
+            this.disabled = false;
+            if (!result.success) {
+                errEl.textContent = result.message || 'Could not log in.';
+                errEl.style.display = 'block';
+                return;
+            }
+            window.location.href = '/merchant/dashboard';
+        })
+        .catch(() => {
+            this.disabled = false;
+            errEl.textContent = 'Could not reach the server. Please try again.';
+            errEl.style.display = 'block';
+        });
+    });
+
+    document.getElementById('merchantSignupBtn').addEventListener('click', function () {
+        const errEl = document.getElementById('merchantSignupError');
+        errEl.style.display = 'none';
+
+        const stallChoice = document.getElementById('merchantStallSelect').value;
+        if (!stallChoice) {
+            errEl.textContent = 'Please choose a stall to manage.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('email', document.getElementById('merchantSignupEmail').value.trim());
+        formData.append('password', document.getElementById('merchantSignupPassword').value);
+        formData.append('confirmPassword', document.getElementById('merchantSignupConfirmPassword').value);
+
+        if (stallChoice === '__new__') {
+            formData.append('stallMode', 'new');
+            formData.append('newStallName', document.getElementById('newStallName').value.trim());
+            const imgFile = document.getElementById('newStallImage').files[0];
+            if (imgFile) formData.append('stallImage', imgFile);
+        } else {
+            formData.append('stallMode', 'existing');
+            formData.append('stallId', stallChoice);
+        }
+
+        this.disabled = true;
+        fetch('/merchant/signup', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(result => {
+                this.disabled = false;
+                if (!result.success) {
+                    errEl.textContent = result.message || 'Could not create your account.';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                window.location.href = '/merchant/dashboard';
+            })
+            .catch(() => {
+                this.disabled = false;
+                errEl.textContent = 'Could not reach the server. Please try again.';
+                errEl.style.display = 'block';
+            });
+    });
+})();
 </script>
 
 <!-- Shortcut back to the live tracker (shown whenever an order is still being prepared) -->

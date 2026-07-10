@@ -48,17 +48,36 @@ async function seedDatabase() {
         await client.connect();
         const db = client.db("foodhub"); // Ensure this matches your database name
 
-        console.log("Connected to database. Deleting old data to prevent duplicates...");
-        await db.collection("stalls").deleteMany({});
-        await db.collection("foods").deleteMany({});
+        // Upsert rather than delete+insert: stalls can now be claimed by a
+        // merchant (merchantId) and foods can be added by a merchant too, so
+        // re-running this script must never wipe that data. Cosmetic fields
+        // (name/emoji/image/description/price) stay in sync with this file;
+        // merchant-owned fields are only set the first time a doc is created.
+        console.log("Upserting stalls...");
+        for (const stall of stallsData) {
+            await db.collection("stalls").updateOne(
+                { id: stall.id },
+                {
+                    $set: { name: stall.name, emoji: stall.emoji, image: stall.image, description: stall.description },
+                    $setOnInsert: { merchantId: null, isOpen: true }
+                },
+                { upsert: true }
+            );
+        }
 
-        console.log("Inserting new stalls...");
-        await db.collection("stalls").insertMany(stallsData);
+        console.log("Upserting foods...");
+        for (const food of foodsData) {
+            await db.collection("foods").updateOne(
+                { id: food.id },
+                {
+                    $set: { stall_id: food.stall_id, name: food.name, price: food.price, image: food.image, badge: food.badge, options: food.options },
+                    $setOnInsert: { soldOut: false }
+                },
+                { upsert: true }
+            );
+        }
 
-        console.log("Inserting new foods...");
-        await db.collection("foods").insertMany(foodsData);
-
-        console.log("✅ Success! Your database is now fully populated.");
+        console.log("✅ Success! Your database is now up to date.");
     } catch (err) {
         console.error("❌ Error seeding database:", err);
     } finally {

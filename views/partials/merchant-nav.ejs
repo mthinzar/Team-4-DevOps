@@ -1,0 +1,41 @@
+<nav class="navbar navbar-expand-lg m-navbar py-2">
+    <div class="container-fluid px-3 px-md-4">
+        <a class="navbar-brand fw-bold" href="/merchant/dashboard">
+            <img src="/images/logo.png" alt="FoodHub"
+                 onerror="this.style.display='none';document.getElementById('mBrandText').style.display='inline';">
+            <span id="mBrandText" style="display:none;">food<span class="brand-red">hub</span></span>
+            <span class="badge bg-dark ms-1" style="font-size:0.6rem; vertical-align: middle;">MERCHANT</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#merchantNavCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="merchantNavCollapse">
+            <div class="d-flex flex-wrap gap-1 flex-grow-1">
+                <a href="/merchant/dashboard" class="m-nav-link <%= activePage === 'dashboard' ? 'active' : '' %>">Dashboard</a>
+                <a href="/merchant/menu" class="m-nav-link <%= activePage === 'menu' ? 'active' : '' %>">Menu</a>
+                <a href="/merchant/orders" class="m-nav-link <%= activePage === 'orders' ? 'active' : '' %>">Orders</a>
+                <a href="/merchant/stats" class="m-nav-link <%= activePage === 'stats' ? 'active' : '' %>">Statistics</a>
+                <a href="/merchant/reviews" class="m-nav-link <%= activePage === 'reviews' ? 'active' : '' %>">Reviews</a>
+                <a href="/merchant/profile" class="m-nav-link <%= activePage === 'profile' ? 'active' : '' %>">Store Profile</a>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mt-2 mt-lg-0">
+                <% if (typeof merchantStall !== 'undefined' && merchantStall) { %>
+                    <span class="m-store-chip">
+                        <img src="<%= merchantStall.image %>" alt="<%= merchantStall.name %>" onerror="this.style.display='none';">
+                        <%= merchantStall.name %>
+                    </span>
+                <% } %>
+                <button type="button" class="btn-brand-outline btn-sm" id="merchantLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+    document.getElementById('merchantLogoutBtn').addEventListener('click', () => {
+        fetch('/merchant/logout', { method: 'POST' }).then(() => { window.location.href = '/'; });
+    });
+</script>

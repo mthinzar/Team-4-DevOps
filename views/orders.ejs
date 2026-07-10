@@ -53,6 +53,7 @@
         .status-preparing { background: var(--pink-soft); color: var(--brand); }
         .status-ready { background: #d1f5df; color: #198754; }
         .status-collected { background: #eeeeee; color: #7a7a7a; }
+        .status-cancelled { background: #fde2e1; color: #c0392b; }
 
         .orders-empty { text-align: center; color: #7a7a7a; padding: 4rem 1rem; }
         .orders-empty a { color: var(--brand); }
@@ -125,10 +126,15 @@
         <div class="orders-empty">You have no orders yet.<br><a href="/menu">Browse the menu</a> to place your first order.</div>
     <% } else { %>
         <% orders.forEach(order => {
-            const isCollected = order.status === 'collected';
-            const isReady = !isCollected && Date.now() >= order.readyAt;
-            const statusClass = isCollected ? 'status-collected' : (isReady ? 'status-ready' : 'status-preparing');
-            const statusText = isCollected ? 'Collected' : (isReady ? 'Ready for Pickup' : 'Preparing');
+            const isDone = order.status === 'completed' || order.status === 'collected';
+            const isCancelled = order.status === 'cancelled';
+            const isReady = order.status === 'ready';
+            let statusClass = 'status-preparing';
+            let statusText = 'Preparing';
+            if (isCancelled) { statusClass = 'status-cancelled'; statusText = 'Cancelled'; }
+            else if (isDone) { statusClass = 'status-collected'; statusText = 'Collected'; }
+            else if (isReady) { statusClass = 'status-ready'; statusText = 'Ready for Pickup'; }
+            else if (order.status === 'pending') { statusText = 'Order Received'; }
         %>
             <div class="order-card">
                 <div class="order-head">
@@ -146,7 +152,7 @@
                 <% }) %>
                 <div class="order-total"><span>Total</span><span>$<%= order.total.toFixed(2) %></span></div>
                 <div class="d-flex gap-2 mt-3">
-                    <% if (!isCollected) { %>
+                    <% if (!isDone && !isCancelled) { %>
                         <a href="/track/<%= order.orderId %>" class="btn-track">Track Order</a>
                     <% } %>
                     <button type="button" class="btn-reorder" onclick='reorderOrder(<%- JSON.stringify(order.items) %>)'>Reorder</button>
