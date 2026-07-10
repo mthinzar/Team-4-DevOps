@@ -2,7 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const session = require('express-session');
 const { connectDB, getDB } = require('./db');
-const { images, popularDishes } = require('./data/dishes');
+const { images } = require('./data/dishes');
+const { getReviewsForFood, addReview, getRatingSummary, getRatingSummariesForFoods } = require('./data/reviews');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -103,11 +104,11 @@ app.post('/auth/logout', (req, res) => {
 app.get('/', async (req, res) => {
     try {
         const db = getDB();
-        const stalls = await db.collection('stalls').find({}).limit(6).toArray();
-        res.render('index', { images, popularDishes, stalls });
+        const stalls = await db.collection('stalls').find({}).limit(3).toArray();
+        res.render('index', { images, stalls });
     } catch (err) {
         console.error(err);
-        res.render('index', { images, popularDishes, stalls: [] });
+        res.render('index', { images, stalls: [] });
     }
 });
 
@@ -117,6 +118,16 @@ app.get('/menu', async (req, res) => {
         const stallsData = await db.collection('stalls').find({}).toArray();
         const foodsData = await db.collection('foods').find({}).toArray();
 
+        // Attach each dish's average rating & review count (one aggregate
+        // query for the whole page, not one per dish).
+        const foodIds = foodsData.map(food => food.id).filter(Boolean);
+        const ratingSummaries = await getRatingSummariesForFoods(foodIds);
+        foodsData.forEach(food => {
+            const summary = ratingSummaries[food.id] || { avgRating: 0, reviewCount: 0 };
+            food.avgRating = summary.avgRating;
+            food.reviewCount = summary.reviewCount;
+        });
+
         stallsData.forEach(stall => {
             stall.foods = foodsData.filter(food => food.stall_id === stall.id);
         });
@@ -125,6 +136,50 @@ app.get('/menu', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).send('Error loading menu from database');
+    }
+});
+
+// Reviews for a single dish — used by the customize/review modal on the
+// stall page. Viewing is public; posting a review requires login.
+app.get('/api/foods/:foodId/reviews', async (req, res) => {
+    try {
+        const [reviews, summary] = await Promise.all([
+            getReviewsForFood(req.params.foodId),
+            getRatingSummary(req.params.foodId)
+        ]);
+        res.json({ success: true, reviews, ...summary });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not load reviews.' });
+    }
+});
+
+app.post('/api/foods/:foodId/reviews', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: 'Please log in to leave a review.' });
+    }
+
+    const { rating, comment } = req.body || {};
+    if (!rating || rating < 1 || rating > 5) {
+        return res.status(400).json({ success: false, message: 'Please choose a star rating.' });
+    }
+
+    try {
+        await addReview(req.params.foodId, {
+            userId: req.session.user.id,
+            userName: req.session.user.name,
+            rating,
+            comment
+        });
+
+        const [reviews, summary] = await Promise.all([
+            getReviewsForFood(req.params.foodId),
+            getRatingSummary(req.params.foodId)
+        ]);
+        res.json({ success: true, reviews, ...summary });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not save your review.' });
     }
 });
 
@@ -180,11 +235,12 @@ app.post('/pay', async (req, res) => {
             orderId,
             userId: req.session.user.id,
             customerName: (customer && customer.name) || req.session.user.name,
-            items: items.map(i => ({ name: i.name, price: Number(i.price), qty: Number(i.qty), image: i.image || null })),
+            items: items.map(i => ({ name: i.name, price: Number(i.price), qty: Number(i.qty), image: i.image || null, foodId: i.foodId || null })),
             total: Number(total.toFixed(2)),
             queueNum,
             prepTimeSeconds,
             readyAt,
+            status: 'preparing',
             createdAt: new Date()
         });
 
@@ -210,6 +266,52 @@ app.get('/track/:orderId', async (req, res) => {
     } catch (err) {
         console.error(err);
         res.render('track', { images, order: null });
+    }
+});
+
+// Marks an order as collected once the customer has picked it up (button on
+// the tracking page, shown once the order is ready). This is what stops the
+// nav's "Track Order" shortcut from following that order around forever.
+app.post('/orders/:orderId/collect', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: 'Please log in.' });
+    }
+    try {
+        const db = getDB();
+        const result = await db.collection('orders').updateOne(
+            { orderId: req.params.orderId, userId: req.session.user.id },
+            { $set: { status: 'collected', collectedAt: new Date() } }
+        );
+        if (result.matchedCount === 0) {
+            return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not update your order.' });
+    }
+});
+
+// The logged-in user's most recent order that hasn't been collected yet —
+// powers the small "Track Order" shortcut shown in the nav on every page,
+// so closing the tracker never means losing track of an order in progress.
+app.get('/api/orders/active', async (req, res) => {
+    if (!req.session.user) {
+        return res.json({ success: true, order: null });
+    }
+    try {
+        const db = getDB();
+        const order = await db.collection('orders').find(
+            { userId: req.session.user.id, status: { $ne: 'collected' } }
+        ).sort({ createdAt: -1 }).limit(1).next();
+
+        res.json({
+            success: true,
+            order: order ? { orderId: order.orderId, queueNum: order.queueNum, readyAt: order.readyAt } : null
+        });
+    } catch (err) {
+        console.error(err);
+        res.json({ success: true, order: null });
     }
 });
 

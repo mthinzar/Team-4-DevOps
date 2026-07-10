@@ -246,6 +246,14 @@
             font-size: 1.1rem;
         }
 
+        .dish-rating {
+            font-size: 0.78rem;
+            color: #7a7a7a;
+            margin-bottom: 0.35rem;
+        }
+
+        .stars-sm { color: #f5a623; }
+
         /* Choice options styling in Customize Modal */
         .opt-radio-card {
             border: 1px solid rgba(226, 55, 68, 0.15);
@@ -557,6 +565,15 @@
         </div>
     </nav>
 
+    <!-- Shortcut back to the live tracker for an order still in progress -->
+    <div class="container">
+        <div class="d-flex justify-content-end">
+            <a href="#" id="navTrackLink" class="btn btn-sm mt-2" style="display:none; background:#d1f5df; color:#198754; border-radius:20px; font-weight:600; font-size:0.8rem;">
+                🍳 Track order <span id="navTrackQueue"></span> &rarr;
+            </a>
+        </div>
+    </div>
+
     <!-- Search Section -->
     <header class="search-header text-center">
         <div class="container">
@@ -613,6 +630,7 @@
                     <div class="col-12 col-sm-6 col-md-4 col-lg-3 menu-item stall-group-<%= stall.id %>"
                         data-name="<%= food.name.toLowerCase() %>">
                         <div class="dish-card"
+                            data-foodid="<%= food.id %>"
                             data-name="<%= food.name %>"
                             data-price="<%= food.price %>"
                             data-image="<%= food.image %>"
@@ -630,6 +648,14 @@
                                         <span class="badge bg-danger ms-1 text-uppercase" style="font-size:0.6rem;">
                                             <%= food.badge %>
                                         </span>
+                                    <% } %>
+                                </div>
+                                <div class="dish-rating">
+                                    <% if (food.reviewCount > 0) { %>
+                                        <span class="stars-sm">★</span> <%= food.avgRating.toFixed(1) %>
+                                        <span class="text-muted">(<%= food.reviewCount %>)</span>
+                                    <% } else { %>
+                                        <span class="text-muted">No reviews yet</span>
                                     <% } %>
                                 </div>
                                 <div class="d-flex flex-column align-items-center justify-content-center mt-auto">
@@ -842,6 +868,7 @@
         let currentUser = <%- JSON.stringify(user) %>;
 
         function renderAuth() {
+            window.currentUser = currentUser;
             const authButtons = document.getElementById('authButtons');
             const userMenu = document.getElementById('userMenu');
             if (currentUser && currentUser.name) {
@@ -962,6 +989,20 @@
     })();
     </script>
 
+    <!-- Shortcut back to the live tracker (shown whenever an order is still being prepared) -->
+    <script>
+        fetch('/api/orders/active')
+            .then(r => r.json())
+            .then(data => {
+                if (!data.order) return;
+                const link = document.getElementById('navTrackLink');
+                document.getElementById('navTrackQueue').textContent = '#' + data.order.queueNum;
+                link.href = '/track/' + data.order.orderId;
+                link.style.display = 'inline-block';
+            })
+            .catch(() => {});
+    </script>
+
     <!-- Stall directory / drill-down / customize-modal interaction logic -->
     <script>
         const directory = document.getElementById('stallDirectory');
@@ -1076,11 +1117,14 @@
             }
         });
 
-        // Make the whole dish card clickable and pull attributes directly from the card
+        // Make the whole dish card clickable and pull attributes directly from the card.
+        // Every dish opens the modal now (not just ones with size/spicy/addon choices)
+        // so there's always somewhere to see & leave reviews.
         document.addEventListener('click', (e) => {
             const card = e.target.closest('.dish-card');
 
             if (card) {
+                const foodId = card.dataset.foodid;
                 const name = card.dataset.name;
                 const price = parseFloat(card.dataset.price);
                 const image = card.dataset.image;
@@ -1093,14 +1137,7 @@
                     options = null;
                 }
 
-                const hasChoices = options && (options.sizes || options.spicy || options.addons);
-
-                if (hasChoices) {
-                    triggerCustomizeModal({ name, price, image, stall, options });
-                } else {
-                    addToCart(name, price, image, 1, null);
-                    showToast(`${name} added to cart`);
-                }
+                triggerCustomizeModal({ foodId, name, price, image, stall, options });
             }
         });
 
@@ -1118,7 +1155,7 @@
             document.getElementById('customizeModalLabel').textContent = `${food.name}`;
             modalFoodStall.textContent = food.stall;
 
-            const opt = food.options;
+            const opt = food.options || {};
 
             if (opt.sizes && opt.sizes.length > 0) {
                 sizeGroup.classList.remove('d-none');
@@ -1242,18 +1279,18 @@
             });
 
             let finalUnitPrice = activeFood.price;
-            if (selectedOptions.size && activeFood.options.sizes) {
+            if (selectedOptions.size && activeFood.options && activeFood.options.sizes) {
                 const sz = activeFood.options.sizes.find(s => s.name === selectedOptions.size);
                 if (sz) finalUnitPrice += sz.priceDiff;
             }
-            if (selectedOptions.addons.length > 0 && activeFood.options.addons) {
+            if (selectedOptions.addons.length > 0 && activeFood.options && activeFood.options.addons) {
                 selectedOptions.addons.forEach(addonName => {
                     const ad = activeFood.options.addons.find(a => a.name === addonName);
                     if (ad) finalUnitPrice += ad.priceDiff;
                 });
             }
 
-            addToCart(activeFood.name, finalUnitPrice, activeFood.image, currentModalQty, selectedOptions);
+            addToCart(activeFood.name, finalUnitPrice, activeFood.image, currentModalQty, selectedOptions, activeFood.foodId);
             showToast(`${currentModalQty}x ${activeFood.name} added to cart`);
             customizeModal.hide();
         }
@@ -1268,6 +1305,7 @@
                 cartToast.classList.remove('show');
             }, 3000);
         }
+
     </script>
 </body>
 

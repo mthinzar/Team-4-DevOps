@@ -44,16 +44,18 @@ function cartItemKey(name, options) {
 }
 
 // Add a dish (or increase its quantity if the same dish + options combo is already in the cart)
-function addToCart(name, price, image, qty, options) {
+// foodId is carried along so a post-checkout review can be attached to the right dish.
+function addToCart(name, price, image, qty, options, foodId) {
     qty = qty || 1;
     options = options || null;
+    foodId = foodId || null;
     const key = cartItemKey(name, options);
     const cart = getCart();
     const item = cart.find(d => d.key === key);
     if (item) {
         item.qty += qty;
     } else {
-        cart.push({ key: key, name: name, price: Number(price), image: image, qty: qty, options: options });
+        cart.push({ key: key, name: name, price: Number(price), image: image, qty: qty, options: options, foodId: foodId });
     }
     saveCart(cart);
     openCartDrawer();
@@ -156,7 +158,7 @@ function reorderItems(items) {
         if (existing) {
             existing.qty += item.qty;
         } else {
-            cart.push({ key: key, name: item.name, price: item.price, image: item.image, qty: item.qty, options: item.options || null });
+            cart.push({ key: key, name: item.name, price: item.price, image: item.image, qty: item.qty, options: item.options || null, foodId: item.foodId || null });
         }
     });
     saveCart(cart);
@@ -172,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Simple "Add to cart" buttons (no customization) read the dish details from their data- attributes
     document.querySelectorAll('.add-to-cart').forEach(button => {
         button.addEventListener('click', () => {
-            addToCart(button.dataset.name, button.dataset.price, button.dataset.image, 1, null);
+            addToCart(button.dataset.name, button.dataset.price, button.dataset.image, 1, null, button.dataset.foodid || null);
         });
     });
 

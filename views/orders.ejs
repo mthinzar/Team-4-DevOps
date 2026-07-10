@@ -49,7 +49,10 @@
         .order-line:last-of-type { border-bottom: none; }
         .order-total { display: flex; justify-content: space-between; font-weight: 700; padding-top: 0.75rem; }
 
-        .status-badge { font-size: 0.75rem; font-weight: 700; border-radius: 999px; padding: 0.3rem 0.85rem; background: var(--pink-soft); color: var(--brand); }
+        .status-badge { font-size: 0.75rem; font-weight: 700; border-radius: 999px; padding: 0.3rem 0.85rem; }
+        .status-preparing { background: var(--pink-soft); color: var(--brand); }
+        .status-ready { background: #d1f5df; color: #198754; }
+        .status-collected { background: #eeeeee; color: #7a7a7a; }
 
         .orders-empty { text-align: center; color: #7a7a7a; padding: 4rem 1rem; }
         .orders-empty a { color: var(--brand); }
@@ -64,6 +67,18 @@
             font-size: 0.85rem;
         }
         .btn-reorder:hover { background: var(--brand-dark); color: #fff; }
+
+        .btn-track {
+            background: #fff;
+            color: var(--brand);
+            border: 1px solid var(--brand);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-decoration: none;
+        }
+        .btn-track:hover { background: var(--pink-soft); color: var(--brand); }
 
         /* Footer */
         footer { background: #1a1a1a; color: #ddd; }
@@ -109,14 +124,19 @@
     <% if (orders.length === 0) { %>
         <div class="orders-empty">You have no orders yet.<br><a href="/menu">Browse the menu</a> to place your first order.</div>
     <% } else { %>
-        <% orders.forEach(order => { %>
+        <% orders.forEach(order => {
+            const isCollected = order.status === 'collected';
+            const isReady = !isCollected && Date.now() >= order.readyAt;
+            const statusClass = isCollected ? 'status-collected' : (isReady ? 'status-ready' : 'status-preparing');
+            const statusText = isCollected ? 'Collected' : (isReady ? 'Ready for Pickup' : 'Preparing');
+        %>
             <div class="order-card">
                 <div class="order-head">
                     <div>
                         <div class="order-id-text"><%= order.orderId %></div>
                         <div class="order-date"><%= new Date(order.createdAt).toLocaleDateString() %> <%= new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) %></div>
                     </div>
-                    <span class="status-badge">Paid</span>
+                    <span class="status-badge <%= statusClass %>"><%= statusText %></span>
                 </div>
                 <% order.items.forEach(item => { %>
                 <div class="order-line">
@@ -125,7 +145,12 @@
                 </div>
                 <% }) %>
                 <div class="order-total"><span>Total</span><span>$<%= order.total.toFixed(2) %></span></div>
-                <button type="button" class="btn-reorder mt-3" onclick='reorderOrder(<%- JSON.stringify(order.items) %>)'>Reorder</button>
+                <div class="d-flex gap-2 mt-3">
+                    <% if (!isCollected) { %>
+                        <a href="/track/<%= order.orderId %>" class="btn-track">Track Order</a>
+                    <% } %>
+                    <button type="button" class="btn-reorder" onclick='reorderOrder(<%- JSON.stringify(order.items) %>)'>Reorder</button>
+                </div>
             </div>
         <% }) %>
     <% } %>

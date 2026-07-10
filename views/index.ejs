@@ -198,7 +198,8 @@
         .hero-carousel .carousel-item img {
             height: 340px;
             width: 100%;
-            object-fit: contain;
+            object-fit: cover;
+            border-radius: 20px;
             filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.18));
         }
 
@@ -631,58 +632,6 @@
             background: var(--brand-dark);
             color: #fff;
         }
-
-        /* Dish cards */
-        .dish-card {
-            border: 1px solid #f0d0d4;
-            border-radius: 18px;
-            overflow: hidden;
-            background: #fff;
-            height: 100%;
-        }
-
-        .dish-img-wrap {
-            background: var(--pink-soft);
-            height: 140px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .dish-img {
-            max-height: 110px;
-            max-width: 80%;
-            object-fit: contain;
-        }
-
-        .dish-name {
-            font-weight: 600;
-            margin-top: 0.75rem;
-        }
-
-        .dish-desc {
-            font-size: 0.78rem;
-            color: #7a7a7a;
-            padding: 0 0.75rem;
-        }
-
-        .dish-price {
-            font-weight: 700;
-            color: var(--brand);
-        }
-
-        .btn-add-cart {
-            background: var(--brand);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-size: 0.82rem;
-        }
-
-        .btn-add-cart:hover {
-            background: var(--brand-dark);
-            color: #fff;
-        }
     </style>
 </head>
 
@@ -704,7 +653,7 @@
 
         <div class="d-none d-lg-flex flex-grow-1 justify-content-center">
             <a href="/" class="nav-link-custom">Home</a>
-            <a href="/menu" class="nav-link-custom">Stores</a>
+            <a href="/menu" class="nav-link-custom">Stalls</a>
         </div>
 
         <div class="d-flex align-items-center">
@@ -765,6 +714,15 @@
     </div>
 </nav>
 
+<!-- Shortcut back to the live tracker for an order still in progress -->
+<div class="container">
+    <div class="d-flex justify-content-end">
+        <a href="#" id="navTrackLink" class="btn btn-sm mt-2" style="display:none; background:#d1f5df; color:#198754; border-radius:20px; font-weight:600; font-size:0.8rem;">
+            🍳 Track order <span id="navTrackQueue"></span> &rarr;
+        </a>
+    </div>
+</div>
+
 <!-- Hero Section -->
 <section class="container mt-4">
     <div class="hero p-4 p-md-5">
@@ -793,6 +751,7 @@
                     id="heroCarousel"
                     class="carousel slide hero-carousel"
                     data-bs-ride="carousel"
+                    data-bs-interval="3000"
                 >
                     <div class="carousel-indicators">
                         <button
@@ -817,34 +776,22 @@
                             data-bs-slide-to="2"
                             aria-label="Slide 3"
                         ></button>
-
-                        <button
-                            type="button"
-                            data-bs-target="#heroCarousel"
-                            data-bs-slide-to="3"
-                            aria-label="Slide 4"
-                        ></button>
                     </div>
 
                     <div class="carousel-inner">
                         <div class="carousel-item active">
-                            <img src="/images/pizza.png" alt="Cheese Pizza">
-                            <div class="carousel-caption">Wood-fired Pizza 🍕</div>
+                            <img src="/images/nasi%20lemak.png" alt="Nasi Lemak">
+                            <div class="carousel-caption">Nasi Lemak 🍱</div>
                         </div>
 
                         <div class="carousel-item">
-                            <img src="/images/burger.png" alt="Hamburger">
-                            <div class="carousel-caption">Juicy Burgers 🍔</div>
+                            <img src="/images/roasted%20chicken%20rice.png" alt="Roasted Chicken Rice">
+                            <div class="carousel-caption">Hainanese Chicken Rice 🍗</div>
                         </div>
 
                         <div class="carousel-item">
-                            <img src="/images/mala.png" alt="Mala Xiang Guo">
-                            <div class="carousel-caption">Spicy Mala 🌶️</div>
-                        </div>
-
-                        <div class="carousel-item">
-                            <img src="/images/pasta.png" alt="Creamy Pasta">
-                            <div class="carousel-caption">Creamy Pasta 🍝</div>
+                            <img src="/images/spaghetti.png" alt="Spaghetti">
+                            <div class="carousel-caption">Spaghetti 🍝</div>
                         </div>
                     </div>
 
@@ -904,58 +851,14 @@
     </div>
 </section>
 
-<!-- Popular Dishes -->
-<section class="container py-5" id="popular">
+<!-- Popular Stalls -->
+<section class="container py-5" id="stores">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="section-title mb-0">
-            Popular Dishes
+            Popular Stalls
             <span class="underline"></span>
         </h2>
 
-        <a href="/menu" class="view-all">View All &rarr;</a>
-    </div>
-
-    <div class="row g-3">
-        <% popularDishes.forEach(dish => { %>
-            <div class="col-6 col-md-4 col-lg">
-                <div class="dish-card">
-                    <div class="dish-img-wrap">
-                        <img
-                            src="<%= dish.image %>"
-                            class="dish-img"
-                            alt="<%= dish.name %>"
-                        >
-                    </div>
-
-                    <div class="px-2 text-center">
-                        <div class="dish-name"><%= dish.name %></div>
-
-                        <p class="dish-desc">
-                            <%= dish.description %>
-                        </p>
-
-                        <div class="dish-price mb-2">
-                            $<%= dish.price.toFixed(2) %>
-                        </div>
-
-                        <button
-                            class="btn btn-add-cart add-to-cart mb-3"
-                            data-name="<%= dish.name %>"
-                            data-price="<%= dish.price %>"
-                            data-image="<%= dish.image %>"
-                        >
-                            Add to cart
-                        </button>
-                    </div>
-                </div>
-            </div>
-        <% }) %>
-    </div>
-</section>
-
-<!-- Food Stores -->
-<section class="container py-5" id="stores">
-    <div class="d-flex justify-content-end align-items-center mb-4">
         <a href="/menu" class="view-all">View All &rarr;</a>
     </div>
 
@@ -1466,6 +1369,20 @@
 
         renderAuth();
     })();
+</script>
+
+<!-- Shortcut back to the live tracker (shown whenever an order is still being prepared) -->
+<script>
+    fetch('/api/orders/active')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.order) return;
+            const link = document.getElementById('navTrackLink');
+            document.getElementById('navTrackQueue').textContent = '#' + data.order.queueNum;
+            link.href = '/track/' + data.order.orderId;
+            link.style.display = 'inline-block';
+        })
+        .catch(() => {});
 </script>
 
 <script src="/js/cart.js"></script>

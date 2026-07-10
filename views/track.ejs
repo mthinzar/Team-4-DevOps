@@ -19,6 +19,7 @@
             color: #1a1a1a;
         }
         .brand-red { color: var(--brand); }
+        .navbar-brand img { height: 64px; }
 
         .tracking-card {
             background: #fff;
@@ -103,6 +104,84 @@
             color: var(--brand);
         }
 
+        .collected-banner {
+            background: #d1f5df;
+            color: #198754;
+            border-radius: 12px;
+            padding: 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .btn-collect {
+            background: #198754;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.7rem;
+            font-weight: 600;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-collect:hover { background: #146c43; color: #fff; }
+
+        .btn-rate-again {
+            background: none;
+            border: 1px solid var(--brand);
+            color: var(--brand);
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .btn-rate-again:hover { background: var(--pink-soft); }
+
+        /* Post-collection "rate your meal" prompt */
+        .review-prompt-item {
+            display: flex;
+            gap: 0.9rem;
+            border: 1px solid #f0d0d4;
+            border-radius: 14px;
+            padding: 0.9rem;
+            margin-bottom: 0.9rem;
+            text-align: left;
+        }
+        .review-prompt-item:last-child { margin-bottom: 0; }
+        .review-prompt-item img {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .review-prompt-item .rp-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.35rem; }
+        .review-prompt-item textarea {
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        .star-picker { font-size: 1.5rem; line-height: 1; user-select: none; }
+        .star-picker span { cursor: pointer; color: #e0d8da; transition: color 0.15s, transform 0.1s; margin-right: 0.15rem; display: inline-block; }
+        .star-picker span:hover { transform: scale(1.12); }
+        .star-picker span.active { color: #f5a623; }
+
+        .review-success {
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+        .review-success .icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #d1f5df;
+            color: #198754;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 0.75rem;
+        }
+
         /* Footer */
         footer { background: #1a1a1a; color: #ddd; }
         footer a { color: #ddd; text-decoration: none; }
@@ -132,8 +211,8 @@
 <nav class="navbar bg-white py-1 shadow-sm">
     <div class="container">
         <a class="navbar-brand fw-bold fs-3" href="/">
-            <img src="<%= images.logo %>" alt="FoodHub" style="max-height: 30px;"
- onerror="this.style.display='none';document.getElementById('brandText').style.display='inline';">
+            <img src="<%= images.logo %>" alt="FoodHub"
+                 onerror="this.style.display='none';document.getElementById('brandText').style.display='inline';">
             <span id="brandText" style="display:none;">food<span class="brand-red">hub</span></span>
         </a>
     </div>
@@ -144,24 +223,26 @@
         <h3 class="fw-bold mb-1">Live Order Status</h3>
         <p class="text-muted small">Order Reference: <span id="lblOrderId" class="fw-semibold"><%= order ? order.orderId : '--------' %></span></p>
 
-        <% if (order) { %>
+        <% if (order) {
+            const isCollected = order.status === 'collected';
+        %>
         <div class="my-4">
             <span class="text-muted text-uppercase fw-bold small d-block" style="letter-spacing: 0.5px;">Your Queue Number</span>
             <div class="queue-badge" id="lblQueueNumber">#<%= order.queueNum %></div>
         </div>
 
         <div class="progress-pipeline">
-            <div class="pipeline-fill" id="pipelineFill"></div>
+            <div class="pipeline-fill" id="pipelineFill" style="<%= isCollected ? 'width:100%;' : '' %>"></div>
             <div class="text-center">
                 <div class="step-node active" id="node-1">⏳</div>
                 <span class="step-label">Received</span>
             </div>
             <div class="text-center">
-                <div class="step-node" id="node-2">🍳</div>
+                <div class="step-node <%= isCollected ? 'active' : '' %>" id="node-2">🍳</div>
                 <span class="step-label">Preparing</span>
             </div>
             <div class="text-center">
-                <div class="step-node" id="node-3">📦</div>
+                <div class="step-node <%= isCollected ? 'active' : '' %>" id="node-3">📦</div>
                 <span class="step-label">Ready</span>
             </div>
         </div>
@@ -182,10 +263,23 @@
             </div>
         </div>
 
-        <div class="py-3 border-top border-bottom my-4">
-            <span class="text-muted d-block small mb-1">Estimated Preparation Remaining</span>
-            <div class="timer-display" id="lblCountdown">00:00</div>
-        </div>
+        <% if (isCollected) { %>
+            <div class="collected-banner mb-4">✅ Collected — enjoy your meal!</div>
+            <button type="button" class="btn-rate-again mb-4" id="btnRateAgain">⭐ Rate this order</button>
+        <% } else { %>
+            <div class="py-3 border-top border-bottom my-4" id="countdownBlock">
+                <span class="text-muted d-block small mb-1">Estimated Preparation Remaining</span>
+                <div class="timer-display" id="lblCountdown">00:00</div>
+            </div>
+            <div id="collectBlock" class="mb-4" style="display:none;">
+                <button type="button" class="btn-collect" id="btnMarkCollected">✅ I've Collected My Food</button>
+            </div>
+            <!-- Revealed instantly once "I've Collected My Food" succeeds — no page reload needed -->
+            <div id="collectedStateBlock" class="mb-4" style="display:none;">
+                <div class="collected-banner mb-4">✅ Collected — enjoy your meal!</div>
+                <button type="button" class="btn-rate-again" id="btnRateAgainAfterCollect">⭐ Rate this order</button>
+            </div>
+        <% } %>
 
         <% if (!user) { %>
         <div class="alert alert-warning text-start mb-4" id="guestSignupAlert" style="border-radius: 12px;">
@@ -210,11 +304,44 @@
     </div>
 </div>
 
+<!-- Post-collection review prompt -->
+<div class="modal fade" id="reviewPromptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="fw-bold mb-0">How was your food?</h5>
+                    <p class="text-muted small mb-0">Rate the dishes from this order — or skip for now.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reviewPromptItems"></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Skip for now</button>
+                <button type="button" class="btn-collect" style="width:auto; padding-left:1.5rem; padding-right:1.5rem;" id="btnSubmitReviewPrompt">Submit Reviews</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <%- include('partials/footer') %>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <% if (order) { %>
 <script>
+    const orderId = <%- JSON.stringify(order.orderId) %>;
+    const orderItems = <%- JSON.stringify(order.items) %>;
+    const isCollected = <%= order.status === 'collected' ? 'true' : 'false' %>;
+
     document.addEventListener("DOMContentLoaded", () => {
+        if (isCollected) {
+            document.getElementById('btnRateAgain').addEventListener('click', () => showReviewPrompt());
+            return;
+        }
+
         const targetTimestamp = Math.floor(<%= order.readyAt %> / 1000);
         const initialTotalDuration = <%= order.prepTimeSeconds %>;
 
@@ -222,18 +349,29 @@
         const node3 = document.getElementById('node-3');
         const fill = document.getElementById('pipelineFill');
         const clock = document.getElementById('lblCountdown');
+        const collectBlock = document.getElementById('collectBlock');
 
-        const timerEngine = setInterval(() => {
+        let timerEngine = null;
+        let announcedReady = false;
+
+        function tick() {
             const now = Math.floor(Date.now() / 1000);
             const remaining = targetTimestamp - now;
 
             if (remaining <= 0) {
-                clearInterval(timerEngine);
+                if (timerEngine) clearInterval(timerEngine);
                 clock.textContent = "Ready for Pick Up!";
                 clock.style.color = "#198754";
                 fill.style.width = "84%";
                 node2.classList.add('active');
                 node3.classList.add('active');
+                collectBlock.style.display = 'block';
+
+                // Grab the customer's attention if they've switched tabs while waiting
+                if (!announcedReady) {
+                    announcedReady = true;
+                    if (document.hidden) document.title = '🔔 Order Ready! - FoodHub';
+                }
                 return;
             }
 
@@ -247,8 +385,129 @@
 
             if (progressPercentage >= 15) node2.classList.add('active');
             if (progressPercentage >= 75) node3.classList.add('active');
-        }, 1000);
+        }
+
+        tick();
+        timerEngine = setInterval(tick, 1000);
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) document.title = 'FoodHub - Live Order Status';
+        });
+
+        // Swaps the countdown/collect-button UI for the "collected" state instantly,
+        // without needing a page reload (the reload was the bug: if there was nothing
+        // reviewable the modal never opened, so nothing visibly happened afterwards).
+        function markOrderCollectedInUI() {
+            if (timerEngine) clearInterval(timerEngine);
+            document.getElementById('countdownBlock').style.display = 'none';
+            collectBlock.style.display = 'none';
+            document.getElementById('collectedStateBlock').style.display = 'block';
+            document.getElementById('btnRateAgainAfterCollect').addEventListener('click', () => showReviewPrompt());
+        }
+
+        document.getElementById('btnMarkCollected').addEventListener('click', function () {
+            this.disabled = true;
+            this.textContent = 'Marking as collected...';
+
+            fetch(`/orders/${orderId}/collect`, { method: 'POST' })
+                .then(r => r.json())
+                .then(result => {
+                    if (!result.success) {
+                        this.disabled = false;
+                        this.textContent = "✅ I've Collected My Food";
+                        return;
+                    }
+                    markOrderCollectedInUI();
+                    showReviewPrompt();
+                })
+                .catch(() => {
+                    this.disabled = false;
+                    this.textContent = "✅ I've Collected My Food";
+                });
+        });
     });
+
+    // ---- Post-collection "rate your meal" prompt ----
+    function showReviewPrompt() {
+        const container = document.getElementById('reviewPromptItems');
+        const modalFooter = document.querySelector('#reviewPromptModal .modal-footer');
+        const reviewable = orderItems.filter(item => item.foodId);
+
+        modalFooter.style.display = ''; // in case a previous submission hid it
+
+        if (reviewable.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center mb-0">There\'s nothing to rate on this order.</p>';
+        } else {
+            container.innerHTML = reviewable.map(item => `
+                <div class="review-prompt-item" data-foodid="${item.foodId}">
+                    <img src="${item.image}" alt="${item.name}">
+                    <div class="flex-grow-1">
+                        <div class="rp-name">${item.name}</div>
+                        <div class="star-picker">
+                            <span data-value="1">★</span><span data-value="2">★</span><span data-value="3">★</span><span data-value="4">★</span><span data-value="5">★</span>
+                        </div>
+                        <textarea class="form-control" rows="1" placeholder="Comment (optional)"></textarea>
+                    </div>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.review-prompt-item').forEach(row => {
+                const picker = row.querySelector('.star-picker');
+                picker.querySelectorAll('span').forEach(star => {
+                    star.addEventListener('click', () => {
+                        const value = parseInt(star.dataset.value, 10);
+                        picker.dataset.rating = value;
+                        picker.querySelectorAll('span').forEach(s => {
+                            s.classList.toggle('active', parseInt(s.dataset.value, 10) <= value);
+                        });
+                    });
+                });
+            });
+        }
+
+        const modalEl = document.getElementById('reviewPromptModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        // Replace the submit button with a fresh clone each time so re-opening this
+        // modal (e.g. via "Rate this order" more than once) never stacks up duplicate
+        // click handlers that would double-submit reviews.
+        const oldBtn = document.getElementById('btnSubmitReviewPrompt');
+        const submitBtn = oldBtn.cloneNode(true);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Reviews';
+        oldBtn.replaceWith(submitBtn);
+
+        submitBtn.addEventListener('click', function () {
+            const requests = [];
+            container.querySelectorAll('.review-prompt-item').forEach(row => {
+                const rating = parseInt(row.querySelector('.star-picker').dataset.rating || '0', 10);
+                if (rating < 1) return;
+                const comment = row.querySelector('textarea').value.trim();
+                requests.push(fetch(`/api/foods/${row.dataset.foodid}/reviews`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating, comment })
+                }));
+            });
+
+            this.disabled = true;
+            this.textContent = 'Submitting...';
+
+            Promise.allSettled(requests).then(() => {
+                container.innerHTML = `
+                    <div class="review-success">
+                        <div class="icon">✅</div>
+                        <h5 class="fw-bold mb-1">Thanks for your feedback!</h5>
+                        <p class="text-muted small mb-0">Your review helps other students choose what to order.</p>
+                    </div>
+                `;
+                modalFooter.style.display = 'none';
+                setTimeout(() => modal.hide(), 1800);
+            });
+        });
+
+        modal.show();
+    }
 </script>
 <% } %>
 </body>
