@@ -1,0 +1,112 @@
+<style>
+    :root {
+        --brand: #e23744;
+        --brand-dark: #c52d39;
+        --pink: #fcd7dd;
+        --pink-soft: #ffeef1;
+        --ink: #1a1a1a;
+    }
+    body {
+        font-family: 'Poppins', sans-serif;
+        background-color: #f7f5f6;
+        color: var(--ink);
+    }
+    .brand-red { color: var(--brand); }
+
+    /* Merchant nav */
+    .m-navbar {
+        background: #fff;
+        border-bottom: 1px solid #f0d0d4;
+    }
+    .m-navbar .navbar-brand img { height: 48px; }
+    .m-nav-link {
+        color: #6b4a4f;
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.5rem 0.9rem;
+        border-radius: 10px;
+        font-size: 0.92rem;
+    }
+    .m-nav-link:hover { background: var(--pink-soft); color: var(--brand); }
+    .m-nav-link.active { background: var(--brand); color: #fff; }
+    .m-store-chip {
+        background: var(--pink-soft);
+        border-radius: 30px;
+        padding: 0.3rem 0.9rem 0.3rem 0.3rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+    .m-store-chip img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; }
+
+    /* Shared components */
+    .m-card {
+        background: #fff;
+        border: 1px solid #f0d0d4;
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+    .m-page-title { font-weight: 800; font-size: clamp(1.5rem, 3vw, 2.1rem); }
+    .m-page-sub { color: #7a7a7a; font-size: 0.92rem; }
+
+    .m-stat-card {
+        background: #fff;
+        border: 1px solid #f0d0d4;
+        border-radius: 16px;
+        padding: 1.25rem 1.4rem;
+        height: 100%;
+    }
+    .m-stat-card .label { font-size: 0.8rem; color: #7a7a7a; font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .m-stat-card .value { font-size: 1.7rem; font-weight: 800; margin-top: 0.25rem; }
+    .m-stat-card .icon { font-size: 1.4rem; }
+
+    .btn-brand {
+        background: var(--brand);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        padding: 0.6rem 1.2rem;
+        font-weight: 600;
+        transition: 0.2s;
+    }
+    .btn-brand:hover { background: var(--brand-dark); color: #fff; }
+    .btn-brand-outline {
+        background: #fff;
+        color: var(--brand);
+        border: 1px solid var(--brand);
+        border-radius: 10px;
+        padding: 0.55rem 1.1rem;
+        font-weight: 600;
+    }
+    .btn-brand-outline:hover { background: var(--pink-soft); color: var(--brand); }
+
+    .badge-status {
+        font-size: 0.72rem;
+        font-weight: 700;
+        border-radius: 999px;
+        padding: 0.28rem 0.75rem;
+        text-transform: capitalize;
+        display: inline-block;
+    }
+    .badge-status.status-pending { background: #fff3cd; color: #997404; }
+    .badge-status.status-accepted { background: #cfe2ff; color: #084298; }
+    .badge-status.status-preparing,
+    .badge-status.status-collected { background: var(--pink-soft); color: var(--brand); }
+    .badge-status.status-ready { background: #d1f5df; color: #198754; }
+    .badge-status.status-completed { background: #e2e3e5; color: #41464b; }
+    .badge-status.status-cancelled { background: #f8d7da; color: #842029; }
+
+    .m-table th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.4px; color: #7a7a7a; font-weight: 700; border-bottom: 2px solid #f0d0d4; }
+    .m-table td { vertical-align: middle; font-size: 0.9rem; border-bottom: 1px solid #f5e3e6; }
+
+    .m-empty { text-align: center; color: #7a7a7a; padding: 3rem 1rem; }
+
+    .form-label { font-weight: 600; font-size: 0.85rem; }
+    .form-control, .form-select { border-radius: 10px; padding: 0.55rem 0.85rem; }
+    .form-control:focus, .form-select:focus { border-color: var(--brand); box-shadow: 0 0 0 0.2rem rgba(226,55,68,0.15); }
+
+    .toggle-open { color: #198754; }
+    .toggle-closed { color: #842029; }
+</style>

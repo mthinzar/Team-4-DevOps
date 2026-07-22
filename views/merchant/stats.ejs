@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistics - FoodHub Merchant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <%- include('../partials/merchant-styles') %>
+    <style>
+        .chart-wrap { position: relative; height: 280px; }
+        .trending-row { display:flex; justify-content:space-between; align-items:center; padding:0.6rem 0; border-bottom:1px solid #f5e3e6; }
+        .trending-row:last-child { border-bottom:none; }
+        .trending-rank {
+            width: 26px; height: 26px; border-radius: 50%; background: var(--pink-soft); color: var(--brand);
+            display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;
+        }
+    </style>
+</head>
+<body>
+
+<%- include('../partials/merchant-nav', { activePage: 'stats' }) %>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+    <h1 class="m-page-title mb-1">Statistics</h1>
+    <p class="m-page-sub mb-3">A closer look at how your stall is performing.</p>
+
+    <div class="row g-3 mb-4" id="summaryCards">
+        <div class="col-6 col-lg-3">
+            <div class="m-stat-card"><div class="label">Orders Today</div><div class="value" id="statOrdersToday">-</div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="m-stat-card"><div class="label">Orders This Week</div><div class="value" id="statOrdersWeek">-</div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="m-stat-card"><div class="label">Sales Today</div><div class="value" id="statSalesToday">-</div></div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="m-stat-card"><div class="label">Sales This Week</div><div class="value" id="statSalesWeek">-</div></div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-lg-4">
+            <div class="m-stat-card h-100">
+                <div class="label">Total Revenue (all-time)</div>
+                <div class="value" id="statTotalRevenue" style="font-size:2.2rem;">-</div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="m-card">
+                <h6 class="fw-bold mb-3">Orders by Day (last 7 days)</h6>
+                <div class="chart-wrap"><canvas id="ordersByDayChart"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3">
+        <div class="col-lg-6">
+            <div class="m-card">
+                <h6 class="fw-bold mb-3">Best Selling Dishes (all-time)</h6>
+                <div class="chart-wrap"><canvas id="bestSellingChart"></canvas></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="m-card">
+                <h6 class="fw-bold mb-3">Trending Dishes (last 7 days)</h6>
+                <div id="trendingList"><div class="m-empty">Loading…</div></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+    fetch('/api/merchant/stats-data')
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) return;
+
+            document.getElementById('statOrdersToday').textContent = data.ordersTodayCount;
+            document.getElementById('statOrdersWeek').textContent = data.ordersThisWeekCount;
+            document.getElementById('statSalesToday').textContent = '$' + data.salesToday.toFixed(2);
+            document.getElementById('statSalesWeek').textContent = '$' + data.salesThisWeek.toFixed(2);
+            document.getElementById('statTotalRevenue').textContent = '$' + data.totalRevenue.toFixed(2);
+
+            new Chart(document.getElementById('ordersByDayChart'), {
+                type: 'bar',
+                data: {
+                    labels: data.ordersByDay.labels,
+                    datasets: [{
+                        label: 'Orders',
+                        data: data.ordersByDay.counts,
+                        backgroundColor: '#e23744',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
+                }
+            });
+
+            const bestSelling = data.bestSelling || [];
+            if (bestSelling.length === 0) {
+                document.getElementById('bestSellingChart').replaceWith(
+                    Object.assign(document.createElement('div'), { className: 'm-empty', textContent: 'No sales yet.' })
+                );
+            } else {
+                new Chart(document.getElementById('bestSellingChart'), {
+                    type: 'bar',
+                    data: {
+                        labels: bestSelling.map(d => d.name),
+                        datasets: [{
+                            label: 'Quantity Sold',
+                            data: bestSelling.map(d => d.qty),
+                            backgroundColor: '#f5a623',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { x: { beginAtZero: true, ticks: { precision: 0 } } }
+                    }
+                });
+            }
+
+            const trending = data.trending || [];
+            const trendingList = document.getElementById('trendingList');
+            if (trending.length === 0) {
+                trendingList.innerHTML = '<div class="m-empty">No orders in the last 7 days.</div>';
+            } else {
+                trendingList.innerHTML = trending.map((d, i) => `
+                    <div class="trending-row">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="trending-rank">${i + 1}</span>
+                            <span class="fw-semibold">${d.name}</span>
+                        </div>
+                        <span class="text-muted small">${d.qty} sold</span>
+                    </div>
+                `).join('');
+            }
+        })
+        .catch(() => {});
+</script>
+
+</body>
+</html>

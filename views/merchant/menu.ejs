@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Management - FoodHub Merchant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <%- include('../partials/merchant-styles') %>
+    <style>
+        .dish-card {
+            background: #fff;
+            border: 1px solid #f0d0d4;
+            border-radius: 16px;
+            overflow: hidden;
+            height: 100%;
+            position: relative;
+        }
+        .dish-card img { width: 100%; height: 140px; object-fit: cover; }
+        .dish-card.is-sold-out img { filter: grayscale(1); opacity: 0.6; }
+        .sold-out-ribbon {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: #842029;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.25rem 0.6rem;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+        .dish-body { padding: 0.9rem 1rem; }
+        .dish-name { font-weight: 700; }
+        .dish-price { color: var(--brand); font-weight: 700; }
+        .opt-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; }
+        .opt-row input { flex: 1; }
+        .opt-section-title { font-weight: 600; font-size: 0.85rem; margin: 1rem 0 0.5rem; }
+    </style>
+</head>
+<body>
+
+<%- include('../partials/merchant-nav', { activePage: 'menu' }) %>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+        <div>
+            <h1 class="m-page-title mb-1">Menu Management</h1>
+            <p class="m-page-sub mb-0">Add, edit, or remove dishes from your stall.</p>
+        </div>
+        <button type="button" class="btn-brand" id="btnAddDish">+ Add New Dish</button>
+    </div>
+
+    <% if (foods.length === 0) { %>
+        <div class="m-card m-empty">You haven't added any dishes yet. Click "Add New Dish" to build your menu.</div>
+    <% } else { %>
+        <div class="row g-3" id="dishGrid">
+            <% foods.forEach(food => { %>
+                <div class="col-6 col-md-4 col-lg-3" data-food-card="<%= food.id %>">
+                    <div class="dish-card <%= food.soldOut ? 'is-sold-out' : '' %>">
+                        <% if (food.soldOut) { %><span class="sold-out-ribbon">Sold Out</span><% } %>
+                        <img src="<%= food.image %>" alt="<%= food.name %>">
+                        <div class="dish-body">
+                            <div class="dish-name"><%= food.name %></div>
+                            <div class="dish-price mb-2">$<%= food.price.toFixed(2) %></div>
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input toggle-soldout" type="checkbox" role="switch"
+                                       data-food-id="<%= food.id %>" <%= food.soldOut ? 'checked' : '' %>>
+                                <label class="form-check-label small">Sold out</label>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn-brand-outline btn-sm flex-grow-1 btn-edit-dish"
+                                        data-food='<%- JSON.stringify(food) %>'>Edit</button>
+                                <button type="button" class="btn btn-sm btn-outline-danger flex-grow-1 btn-delete-dish"
+                                        data-food-id="<%= food.id %>" data-food-name="<%= food.name %>">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } %>
+</div>
+
+<!-- Add / Edit dish modal -->
+<div class="modal fade" id="dishModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header">
+                <h5 class="fw-bold mb-0" id="dishModalTitle">Add New Dish</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger py-2 small" id="dishFormError" style="display:none;"></div>
+                <form id="dishForm">
+                    <input type="hidden" id="dishId">
+                    <div class="mb-3">
+                        <label class="form-label">Food Name</label>
+                        <input type="text" class="form-control" id="dishName" required maxlength="60">
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Price ($)</label>
+                            <input type="number" class="form-control" id="dishPrice" min="0.01" step="0.01" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Badge (optional)</label>
+                            <input type="text" class="form-control" id="dishBadge" placeholder="e.g. bestseller" maxlength="20">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Food Image</label>
+                        <input type="file" class="form-control" id="dishImage" accept="image/*">
+                        <img id="dishImagePreview" src="" alt="" style="display:none; max-height:100px; margin-top:0.5rem; border-radius:10px;">
+                    </div>
+
+                    <hr>
+                    <p class="text-muted small mb-2">Choose what customers can customize (optional).</p>
+
+                    <div class="opt-section-title">Sizes</div>
+                    <div id="sizeRows"></div>
+                    <button type="button" class="btn-brand-outline btn-sm mb-2" data-add="sizeRows" data-tpl="size">+ Add Size</button>
+
+                    <div class="opt-section-title">Spice Levels</div>
+                    <div id="spicyRows"></div>
+                    <button type="button" class="btn-brand-outline btn-sm mb-2" data-add="spicyRows" data-tpl="spicy">+ Add Spice Level</button>
+
+                    <div class="opt-section-title">Add-ons</div>
+                    <div id="addonRows"></div>
+                    <button type="button" class="btn-brand-outline btn-sm mb-2" data-add="addonRows" data-tpl="addon">+ Add Add-on</button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-brand" id="btnSaveDish">Save Dish</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete confirmation -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-body text-center p-4">
+                <div style="font-size:2.2rem;">🗑️</div>
+                <h5 class="fw-bold mt-2">Delete <span id="deleteDishName"></span>?</h5>
+                <p class="text-muted small">This permanently removes the dish from your menu and database. This can't be undone.</p>
+                <div class="d-flex gap-2 justify-content-center mt-3">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger" id="btnConfirmDelete">Delete Permanently</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const dishModalEl = document.getElementById('dishModal');
+    const dishModal = new bootstrap.Modal(dishModalEl);
+    const deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    const dishFormError = document.getElementById('dishFormError');
+
+    const rowTemplates = {
+        size: () => optRow('e.g. Large', 'Price diff'),
+        spicy: () => optRow('e.g. Extra Spicy', 'Price diff (optional)'),
+        addon: () => optRow('e.g. Extra Cheese', 'Price diff')
+    };
+
+    function optRow(namePlaceholder, pricePlaceholder) {
+        const row = document.createElement('div');
+        row.className = 'opt-row';
+        row.innerHTML = `
+            <input type="text" class="form-control form-control-sm opt-name" placeholder="${namePlaceholder}">
+            <input type="number" class="form-control form-control-sm opt-price" placeholder="${pricePlaceholder}" step="0.01" style="max-width:120px;">
+            <button type="button" class="btn btn-sm btn-outline-danger opt-remove">&times;</button>
+        `;
+        row.querySelector('.opt-remove').addEventListener('click', () => row.remove());
+        return row;
+    }
+
+    document.querySelectorAll('[data-add]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.getElementById(btn.dataset.add).appendChild(rowTemplates[btn.dataset.tpl]());
+        });
+    });
+
+    function clearOptionRows() {
+        ['sizeRows', 'spicyRows', 'addonRows'].forEach(id => { document.getElementById(id).innerHTML = ''; });
+    }
+
+    function fillOptionRows(containerId, tpl, list) {
+        const container = document.getElementById(containerId);
+        (list || []).forEach(item => {
+            const row = rowTemplates[tpl]();
+            row.querySelector('.opt-name').value = item.name || '';
+            row.querySelector('.opt-price').value = item.priceDiff || 0;
+            container.appendChild(row);
+        });
+    }
+
+    function collectOptions() {
+        function collect(containerId) {
+            return Array.from(document.querySelectorAll(`#${containerId} .opt-row`))
+                .map(row => ({
+                    name: row.querySelector('.opt-name').value.trim(),
+                    priceDiff: parseFloat(row.querySelector('.opt-price').value) || 0
+                }))
+                .filter(item => item.name);
+        }
+        const sizes = collect('sizeRows');
+        const spicy = collect('spicyRows');
+        const addons = collect('addonRows');
+        if (!sizes.length && !spicy.length && !addons.length) return null;
+        return { sizes, spicy, addons };
+    }
+
+    function resetForm() {
+        document.getElementById('dishForm').reset();
+        document.getElementById('dishId').value = '';
+        document.getElementById('dishImagePreview').style.display = 'none';
+        clearOptionRows();
+        dishFormError.style.display = 'none';
+    }
+
+    document.getElementById('btnAddDish').addEventListener('click', () => {
+        resetForm();
+        document.getElementById('dishModalTitle').textContent = 'Add New Dish';
+        dishModal.show();
+    });
+
+    document.querySelectorAll('.btn-edit-dish').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const food = JSON.parse(btn.dataset.food);
+            resetForm();
+            document.getElementById('dishModalTitle').textContent = 'Edit Dish';
+            document.getElementById('dishId').value = food.id;
+            document.getElementById('dishName').value = food.name;
+            document.getElementById('dishPrice').value = food.price;
+            document.getElementById('dishBadge').value = food.badge || '';
+            if (food.image) {
+                const preview = document.getElementById('dishImagePreview');
+                preview.src = food.image;
+                preview.style.display = 'inline-block';
+            }
+            if (food.options) {
+                fillOptionRows('sizeRows', 'size', food.options.sizes);
+                fillOptionRows('spicyRows', 'spicy', food.options.spicy);
+                fillOptionRows('addonRows', 'addon', food.options.addons);
+            }
+            dishModal.show();
+        });
+    });
+
+    document.getElementById('dishImage').addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            const preview = document.getElementById('dishImagePreview');
+            preview.src = URL.createObjectURL(this.files[0]);
+            preview.style.display = 'inline-block';
+        }
+    });
+
+    document.getElementById('btnSaveDish').addEventListener('click', function () {
+        const name = document.getElementById('dishName').value.trim();
+        const price = parseFloat(document.getElementById('dishPrice').value);
+        if (!name || !(price > 0)) {
+            dishFormError.textContent = 'Enter a dish name and a valid price.';
+            dishFormError.style.display = 'block';
+            return;
+        }
+
+        const foodId = document.getElementById('dishId').value;
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append('price', price);
+        formData.append('badge', document.getElementById('dishBadge').value.trim());
+        formData.append('options', JSON.stringify(collectOptions()));
+        const imageFile = document.getElementById('dishImage').files[0];
+        if (imageFile) formData.append('image', imageFile);
+
+        const url = foodId ? `/merchant/menu/${foodId}` : '/merchant/menu';
+        this.disabled = true;
+        this.textContent = 'Saving...';
+
+        fetch(url, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(result => {
+                this.disabled = false;
+                this.textContent = 'Save Dish';
+                if (!result.success) {
+                    dishFormError.textContent = result.message || 'Could not save the dish.';
+                    dishFormError.style.display = 'block';
+                    return;
+                }
+                window.location.reload();
+            })
+            .catch(() => {
+                this.disabled = false;
+                this.textContent = 'Save Dish';
+                dishFormError.textContent = 'Could not reach the server. Please try again.';
+                dishFormError.style.display = 'block';
+            });
+    });
+
+    let deleteTargetId = null;
+    document.querySelectorAll('.btn-delete-dish').forEach(btn => {
+        btn.addEventListener('click', () => {
+            deleteTargetId = btn.dataset.foodId;
+            document.getElementById('deleteDishName').textContent = btn.dataset.foodName;
+            deleteModal.show();
+        });
+    });
+
+    document.getElementById('btnConfirmDelete').addEventListener('click', function () {
+        if (!deleteTargetId) return;
+        this.disabled = true;
+        fetch(`/merchant/menu/${deleteTargetId}/delete`, { method: 'POST' })
+            .then(r => r.json())
+            .then(result => {
+                this.disabled = false;
+                if (result.success) {
+                    document.querySelector(`[data-food-card="${deleteTargetId}"]`).remove();
+                    deleteModal.hide();
+                }
+            })
+            .catch(() => { this.disabled = false; });
+    });
+
+    document.querySelectorAll('.toggle-soldout').forEach(checkbox => {
+        checkbox.addEventListener('change', function () {
+            const foodId = this.dataset.foodId;
+            const card = document.querySelector(`[data-food-card="${foodId}"] .dish-card`);
+            this.disabled = true;
+            fetch(`/merchant/menu/${foodId}/toggle-soldout`, { method: 'POST' })
+                .then(r => r.json())
+                .then(result => {
+                    this.disabled = false;
+                    if (!result.success) {
+                        this.checked = !this.checked;
+                        return;
+                    }
+                    card.classList.toggle('is-sold-out', result.soldOut);
+                    let ribbon = card.querySelector('.sold-out-ribbon');
+                    if (result.soldOut && !ribbon) {
+                        ribbon = document.createElement('span');
+                        ribbon.className = 'sold-out-ribbon';
+                        ribbon.textContent = 'Sold Out';
+                        card.prepend(ribbon);
+                    } else if (!result.soldOut && ribbon) {
+                        ribbon.remove();
+                    }
+                })
+                .catch(() => { this.disabled = false; this.checked = !this.checked; });
+        });
+    });
+</script>
+
+</body>
+</html>

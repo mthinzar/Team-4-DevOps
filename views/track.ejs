@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FoodHub - Live Order Status</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --brand: #e23744;
+            --brand-dark: #c52d39;
+            --pink: #fcd7dd;
+            --pink-soft: #ffeef1;
+        }
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+        }
+        .brand-red { color: var(--brand); }
+        .navbar-brand img { height: 64px; }
+
+        .tracking-card {
+            background: #fff;
+            border: 1px solid #f0d0d4;
+            border-radius: 18px;
+            padding: 2.5rem 1.75rem;
+            max-width: 600px;
+            margin: 3rem auto;
+            text-align: center;
+        }
+        .queue-badge {
+            display: inline-block;
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--brand);
+            background: var(--pink-soft);
+            border: 2px dashed var(--brand);
+            padding: 0.4rem 2rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+        }
+        .timer-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: #1a1a1a;
+            font-variant-numeric: tabular-nums;
+        }
+        .progress-pipeline {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin: 2.5rem 0 1.5rem;
+        }
+        .progress-pipeline::before {
+            content: '';
+            position: absolute;
+            top: 22px;
+            left: 8%;
+            right: 8%;
+            height: 4px;
+            background: #f0d0d4;
+            z-index: 1;
+        }
+        .pipeline-fill {
+            position: absolute;
+            top: 22px;
+            left: 8%;
+            width: 0%;
+            height: 4px;
+            background: var(--brand);
+            z-index: 1;
+            transition: width 0.5s linear;
+        }
+        .step-node {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: #fff;
+            border: 3px solid #f0d0d4;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+            position: relative;
+            z-index: 2;
+            transition: all 0.4s ease;
+        }
+        .step-node.active {
+            border-color: var(--brand);
+            background: var(--brand);
+            color: #fff;
+            box-shadow: 0 0 0 6px var(--pink-soft);
+        }
+        .step-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #7a7a7a;
+            margin-top: 0.6rem;
+            display: block;
+        }
+        .step-node.active + .step-label {
+            color: var(--brand);
+        }
+
+        .badge-order-status {
+            display: inline-block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: capitalize;
+            border-radius: 999px;
+            padding: 0.3rem 0.9rem;
+            background: var(--pink-soft);
+            color: var(--brand);
+        }
+        .badge-order-status[data-status="ready"] { background: #d1f5df; color: #198754; }
+        .badge-order-status[data-status="completed"],
+        .badge-order-status[data-status="collected"] { background: #e2e3e5; color: #41464b; }
+        .badge-order-status[data-status="cancelled"] { background: #f8d7da; color: #842029; }
+        .badge-order-status[data-status="pending"] { background: #fff3cd; color: #997404; }
+        .badge-order-status[data-status="accepted"] { background: #cfe2ff; color: #084298; }
+
+        .collected-banner {
+            background: #d1f5df;
+            color: #198754;
+            border-radius: 12px;
+            padding: 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .btn-collect {
+            background: #198754;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 0.7rem;
+            font-weight: 600;
+            width: 100%;
+            transition: 0.2s;
+        }
+        .btn-collect:hover { background: #146c43; color: #fff; }
+
+        .btn-rate-again {
+            background: none;
+            border: 1px solid var(--brand);
+            color: var(--brand);
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .btn-rate-again:hover { background: var(--pink-soft); }
+
+        /* Post-collection "rate your meal" prompt */
+        .review-prompt-item {
+            display: flex;
+            gap: 0.9rem;
+            border: 1px solid #f0d0d4;
+            border-radius: 14px;
+            padding: 0.9rem;
+            margin-bottom: 0.9rem;
+            text-align: left;
+        }
+        .review-prompt-item:last-child { margin-bottom: 0; }
+        .review-prompt-item img {
+            width: 56px;
+            height: 56px;
+            object-fit: cover;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+        .review-prompt-item .rp-name { font-weight: 600; font-size: 0.95rem; margin-bottom: 0.35rem; }
+        .review-prompt-item textarea {
+            border-radius: 10px;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        .star-picker { font-size: 1.5rem; line-height: 1; user-select: none; }
+        .star-picker span { cursor: pointer; color: #e0d8da; transition: color 0.15s, transform 0.1s; margin-right: 0.15rem; display: inline-block; }
+        .star-picker span:hover { transform: scale(1.12); }
+        .star-picker span.active { color: #f5a623; }
+
+        .review-success {
+            text-align: center;
+            padding: 1.5rem 0;
+        }
+        .review-success .icon {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: #d1f5df;
+            color: #198754;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            margin: 0 auto 0.75rem;
+        }
+
+        /* Footer */
+        footer { background: #1a1a1a; color: #ddd; }
+        footer a { color: #ddd; text-decoration: none; }
+        footer a:hover { color: var(--brand); }
+        footer h6 { font-weight: 600; margin-bottom: 1rem; color: #fff; }
+        .footer-logo { height: 64px; }
+        .footer-text { font-size: 0.85rem; color: #aaa; }
+        footer ul { list-style: none; padding-left: 0; }
+        footer ul li { margin-bottom: 0.5rem; font-size: 0.88rem; }
+        .footer-divider { border-color: #333; }
+        .social a {
+            display: inline-flex;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #2a2a2a;
+            align-items: center;
+            justify-content: center;
+            margin-right: 0.4rem;
+            font-size: 0.78rem;
+        }
+        .social a:hover { background: var(--brand); color: #fff; }
+    </style>
+</head>
+<body>
+
+<nav class="navbar bg-white py-1 shadow-sm">
+    <div class="container">
+        <a class="navbar-brand fw-bold fs-3" href="/">
+            <img src="<%= images.logo %>" alt="FoodHub"
+                 onerror="this.style.display='none';document.getElementById('brandText').style.display='inline';">
+            <span id="brandText" style="display:none;">food<span class="brand-red">hub</span></span>
+        </a>
+    </div>
+</nav>
+
+<div class="container px-3">
+    <div class="tracking-card shadow-sm">
+        <h3 class="fw-bold mb-1">Live Order Status</h3>
+        <p class="text-muted small">Order Reference: <span id="lblOrderId" class="fw-semibold"><%= order ? order.orderId : '--------' %></span></p>
+
+        <% if (order) {
+            const isDone = order.status === 'completed' || order.status === 'collected';
+            const isCancelled = order.status === 'cancelled';
+        %>
+        <div class="my-4">
+            <span class="text-muted text-uppercase fw-bold small d-block" style="letter-spacing: 0.5px;">Your Queue Number</span>
+            <div class="queue-badge" id="lblQueueNumber">#<%= order.queueNum %></div>
+        </div>
+
+        <div class="progress-pipeline">
+            <div class="pipeline-fill" id="pipelineFill" style="<%= isDone ? 'width:100%;' : '' %>"></div>
+            <div class="text-center">
+                <div class="step-node active" id="node-1">⏳</div>
+                <span class="step-label">Received</span>
+            </div>
+            <div class="text-center">
+                <div class="step-node <%= (isDone || order.status === 'preparing' || order.status === 'ready') ? 'active' : '' %>" id="node-2">🍳</div>
+                <span class="step-label">Preparing</span>
+            </div>
+            <div class="text-center">
+                <div class="step-node <%= (isDone || order.status === 'ready') ? 'active' : '' %>" id="node-3">📦</div>
+                <span class="step-label">Ready</span>
+            </div>
+        </div>
+
+        <div class="py-3 border-bottom text-start my-4">
+            <span class="text-muted d-block small mb-2 fw-bold text-uppercase" style="letter-spacing: 0.5px;">Your Receipt</span>
+            <div id="receiptLines" class="mb-2">
+                <% order.items.forEach(item => { %>
+                <div class="d-flex justify-content-between align-items-center py-1 font-monospace" style="font-size: 0.88rem;">
+                    <span><%= item.name %> <span class="text-muted">x<%= item.qty %></span></span>
+                    <span>$<%= (item.price * item.qty).toFixed(2) %></span>
+                </div>
+                <% }) %>
+            </div>
+            <div class="d-flex justify-content-between fw-bold pt-2 border-top">
+                <span>Total</span>
+                <span>$<%= order.total.toFixed(2) %></span>
+            </div>
+        </div>
+
+        <div class="mb-2">
+            <span class="badge-order-status" id="lblOrderStatus" data-status="<%= order.status %>">
+                <%= order.status.charAt(0).toUpperCase() + order.status.slice(1) %>
+            </span>
+        </div>
+
+        <% if (isCancelled) { %>
+            <div class="alert alert-danger text-start mb-4" style="border-radius:12px;">
+                This order was cancelled by the stall. If you were charged, please contact support for a refund.
+            </div>
+        <% } else if (isDone) { %>
+            <div class="collected-banner mb-4">✅ Collected — enjoy your meal!</div>
+            <button type="button" class="btn-rate-again mb-4" id="btnRateAgain">⭐ Rate this order</button>
+        <% } else { %>
+            <div class="py-3 border-top border-bottom my-4" id="countdownBlock">
+                <span class="text-muted d-block small mb-1">Estimated Preparation Remaining</span>
+                <div class="timer-display" id="lblCountdown">00:00</div>
+            </div>
+            <div id="collectBlock" class="mb-4" style="display:none;">
+                <button type="button" class="btn-collect" id="btnMarkCollected">✅ I've Collected My Food</button>
+            </div>
+            <!-- Revealed instantly once "I've Collected My Food" succeeds — no page reload needed -->
+            <div id="collectedStateBlock" class="mb-4" style="display:none;">
+                <div class="collected-banner mb-4">✅ Collected — enjoy your meal!</div>
+                <button type="button" class="btn-rate-again" id="btnRateAgainAfterCollect">⭐ Rate this order</button>
+            </div>
+            <div id="cancelledStateBlock" class="mb-4" style="display:none;">
+                <div class="alert alert-danger text-start mb-0" style="border-radius:12px;">
+                    This order was just cancelled by the stall. If you were charged, please contact support for a refund.
+                </div>
+            </div>
+        <% } %>
+
+        <% if (!user) { %>
+        <div class="alert alert-warning text-start mb-4" id="guestSignupAlert" style="border-radius: 12px;">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span>💡</span>
+                <strong style="font-size: 0.9rem;">Order placed as Guest</strong>
+            </div>
+            <p class="mb-2 small text-secondary">Sign up now to save this order to an account profile, earn rewards, and unlock faster checkouts next time!</p>
+            <a class="btn btn-sm btn-danger fw-semibold px-3" href="/" style="border-radius: 6px; background-color: var(--brand); border: none;">Sign Up</a>
+        </div>
+        <% } %>
+
+        <div class="row g-2">
+            <div class="col-6"><a href="/menu" class="btn btn-light w-100 py-2 fw-semibold border text-secondary" style="border-radius:10px;">Browse Menu</a></div>
+            <div class="col-6"><a href="/orders" class="btn btn-dark w-100 py-2 fw-semibold" style="border-radius:10px; background-color:#1a1a1a;">My Orders</a></div>
+        </div>
+
+        <% } else { %>
+        <p class="text-muted mt-4">No active order found for this reference.</p>
+        <a href="/menu" class="btn btn-dark mt-2" style="border-radius:10px;">Browse Menu</a>
+        <% } %>
+    </div>
+</div>
+
+<!-- Post-collection review prompt -->
+<div class="modal fade" id="reviewPromptModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="fw-bold mb-0">How was your food?</h5>
+                    <p class="text-muted small mb-0">Rate the dishes from this order — or skip for now.</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="reviewPromptItems"></div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Skip for now</button>
+                <button type="button" class="btn-collect" style="width:auto; padding-left:1.5rem; padding-right:1.5rem;" id="btnSubmitReviewPrompt">Submit Reviews</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<% if (order) { %>
+<script>
+    const orderId = <%- JSON.stringify(order.orderId) %>;
+    const orderItems = <%- JSON.stringify(order.items) %>;
+    const DONE_STATUSES = ['completed', 'collected'];
+    let currentStatus = <%- JSON.stringify(order.status || 'pending') %>;
+    const isDoneInitially = DONE_STATUSES.includes(currentStatus);
+    const isCancelledInitially = currentStatus === 'cancelled';
+
+    document.addEventListener("DOMContentLoaded", () => {
+        if (isDoneInitially) {
+            document.getElementById('btnRateAgain').addEventListener('click', () => showReviewPrompt());
+            return;
+        }
+        if (isCancelledInitially) {
+            return; // static "cancelled" message already rendered server-side
+        }
+
+        let targetTimestamp = Math.floor(<%= order.readyAt %> / 1000);
+        let initialTotalDuration = <%= order.prepTimeSeconds %>;
+
+        const node2 = document.getElementById('node-2');
+        const node3 = document.getElementById('node-3');
+        const fill = document.getElementById('pipelineFill');
+        const clock = document.getElementById('lblCountdown');
+        const collectBlock = document.getElementById('collectBlock');
+        const statusBadge = document.getElementById('lblOrderStatus');
+
+        let timerEngine = null;
+        let pollEngine = null;
+
+        function tick() {
+            const now = Math.floor(Date.now() / 1000);
+            const remaining = targetTimestamp - now;
+
+            if (remaining <= 0) {
+                // The estimate has elapsed, but "Ready" is confirmed by the stall
+                // (via polling below), not purely by this countdown.
+                clock.textContent = currentStatus === 'ready' ? 'Ready for Pick Up!' : 'Almost ready…';
+                clock.style.color = currentStatus === 'ready' ? '#198754' : '#1a1a1a';
+                fill.style.width = '84%';
+                node2.classList.add('active');
+                return;
+            }
+
+            const mins = Math.floor(remaining / 60).toString().padStart(2, '0');
+            const secs = (remaining % 60).toString().padStart(2, '0');
+            clock.textContent = `${mins}:${secs}`;
+
+            const elapsed = initialTotalDuration - remaining;
+            const progressPercentage = Math.min(Math.max((elapsed / initialTotalDuration) * 84, 0), 84);
+            fill.style.width = `${progressPercentage}%`;
+
+            if (progressPercentage >= 15) node2.classList.add('active');
+        }
+
+        function applyStatus(status) {
+            currentStatus = status;
+            statusBadge.dataset.status = status;
+            statusBadge.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+
+            if (status === 'ready') {
+                node3.classList.add('active');
+                collectBlock.style.display = 'block';
+                if (document.hidden) document.title = '🔔 Order Ready! - FoodHub';
+            } else if (DONE_STATUSES.includes(status)) {
+                markOrderCollectedInUI();
+                if (timerEngine) clearInterval(timerEngine);
+                if (pollEngine) clearInterval(pollEngine);
+            } else if (status === 'cancelled') {
+                if (timerEngine) clearInterval(timerEngine);
+                if (pollEngine) clearInterval(pollEngine);
+                document.getElementById('countdownBlock').style.display = 'none';
+                collectBlock.style.display = 'none';
+                document.getElementById('cancelledStateBlock').style.display = 'block';
+            }
+        }
+
+        function pollStatus() {
+            fetch(`/api/orders/${orderId}/status`)
+                .then(r => r.json())
+                .then(data => {
+                    if (!data.success) return;
+                    if (data.readyAt) targetTimestamp = Math.floor(data.readyAt / 1000);
+                    if (data.prepTimeSeconds) initialTotalDuration = data.prepTimeSeconds;
+                    if (data.status !== currentStatus) applyStatus(data.status);
+                })
+                .catch(() => {});
+        }
+
+        tick();
+        timerEngine = setInterval(tick, 1000);
+        pollEngine = setInterval(pollStatus, 5000);
+        pollStatus();
+
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) document.title = 'FoodHub - Live Order Status';
+        });
+
+        // Swaps the countdown/collect-button UI for the "collected" state instantly,
+        // without needing a page reload (the reload was the bug: if there was nothing
+        // reviewable the modal never opened, so nothing visibly happened afterwards).
+        function markOrderCollectedInUI() {
+            if (timerEngine) clearInterval(timerEngine);
+            document.getElementById('countdownBlock').style.display = 'none';
+            collectBlock.style.display = 'none';
+            document.getElementById('collectedStateBlock').style.display = 'block';
+            document.getElementById('btnRateAgainAfterCollect').addEventListener('click', () => showReviewPrompt());
+        }
+
+        document.getElementById('btnMarkCollected').addEventListener('click', function () {
+            this.disabled = true;
+            this.textContent = 'Marking as collected...';
+
+            fetch(`/orders/${orderId}/collect`, { method: 'POST' })
+                .then(r => r.json())
+                .then(result => {
+                    if (!result.success) {
+                        this.disabled = false;
+                        this.textContent = "✅ I've Collected My Food";
+                        return;
+                    }
+                    markOrderCollectedInUI();
+                    showReviewPrompt();
+                })
+                .catch(() => {
+                    this.disabled = false;
+                    this.textContent = "✅ I've Collected My Food";
+                });
+        });
+    });
+
+    // ---- Post-collection "rate your meal" prompt ----
+    function showReviewPrompt() {
+        const container = document.getElementById('reviewPromptItems');
+        const modalFooter = document.querySelector('#reviewPromptModal .modal-footer');
+        const reviewable = orderItems.filter(item => item.foodId);
+
+        modalFooter.style.display = ''; // in case a previous submission hid it
+
+        if (reviewable.length === 0) {
+            container.innerHTML = '<p class="text-muted text-center mb-0">There\'s nothing to rate on this order.</p>';
+        } else {
+            container.innerHTML = reviewable.map(item => `
+                <div class="review-prompt-item" data-foodid="${item.foodId}">
+                    <img src="${item.image}" alt="${item.name}">
+                    <div class="flex-grow-1">
+                        <div class="rp-name">${item.name}</div>
+                        <div class="star-picker">
+                            <span data-value="1">★</span><span data-value="2">★</span><span data-value="3">★</span><span data-value="4">★</span><span data-value="5">★</span>
+                        </div>
+                        <textarea class="form-control" rows="1" placeholder="Comment (optional)"></textarea>
+                    </div>
+                </div>
+            `).join('');
+
+            container.querySelectorAll('.review-prompt-item').forEach(row => {
+                const picker = row.querySelector('.star-picker');
+                picker.querySelectorAll('span').forEach(star => {
+                    star.addEventListener('click', () => {
+                        const value = parseInt(star.dataset.value, 10);
+                        picker.dataset.rating = value;
+                        picker.querySelectorAll('span').forEach(s => {
+                            s.classList.toggle('active', parseInt(s.dataset.value, 10) <= value);
+                        });
+                    });
+                });
+            });
+        }
+
+        const modalEl = document.getElementById('reviewPromptModal');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+
+        // Replace the submit button with a fresh clone each time so re-opening this
+        // modal (e.g. via "Rate this order" more than once) never stacks up duplicate
+        // click handlers that would double-submit reviews.
+        const oldBtn = document.getElementById('btnSubmitReviewPrompt');
+        const submitBtn = oldBtn.cloneNode(true);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Reviews';
+        oldBtn.replaceWith(submitBtn);
+
+        submitBtn.addEventListener('click', function () {
+            const requests = [];
+            container.querySelectorAll('.review-prompt-item').forEach(row => {
+                const rating = parseInt(row.querySelector('.star-picker').dataset.rating || '0', 10);
+                if (rating < 1) return;
+                const comment = row.querySelector('textarea').value.trim();
+                requests.push(fetch(`/api/foods/${row.dataset.foodid}/reviews`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ rating, comment })
+                }));
+            });
+
+            this.disabled = true;
+            this.textContent = 'Submitting...';
+
+            Promise.allSettled(requests).then(() => {
+                container.innerHTML = `
+                    <div class="review-success">
+                        <div class="icon">✅</div>
+                        <h5 class="fw-bold mb-1">Thanks for your feedback!</h5>
+                        <p class="text-muted small mb-0">Your review helps other students choose what to order.</p>
+                    </div>
+                `;
+                modalFooter.style.display = 'none';
+                setTimeout(() => modal.hide(), 1800);
+            });
+        });
+
+        modal.show();
+    }
+</script>
+<% } %>
+</body>
+</html>

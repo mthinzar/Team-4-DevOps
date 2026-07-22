@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Merchant Dashboard - FoodHub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <%- include('../partials/merchant-styles') %>
+    <style>
+        .welcome-banner {
+            background: linear-gradient(120deg, #fde2e7 0%, #fcd7dd 60%, #f9c4cd 100%);
+            border-radius: 20px;
+            padding: 1.75rem 2rem;
+        }
+        .shop-status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            background: #fff;
+        }
+        .order-row-items { font-size: 0.8rem; color: #7a7a7a; }
+    </style>
+</head>
+<body>
+
+<%- include('../partials/merchant-nav', { activePage: 'dashboard' }) %>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+
+    <div class="welcome-banner mb-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+        <div>
+            <h1 class="m-page-title mb-1">Welcome back, <%= stall ? stall.name : 'Merchant' %> 👋</h1>
+            <p class="m-page-sub mb-0">Here's how your stall is doing today.</p>
+        </div>
+        <div class="text-center">
+            <div class="shop-status-pill <%= stall && stall.isOpen ? 'toggle-open' : 'toggle-closed' %>">
+                <span id="shopStatusDot">●</span>
+                <span id="shopStatusLabel"><%= stall && stall.isOpen ? 'Shop Open' : 'Shop Closed' %></span>
+            </div>
+            <div class="form-check form-switch mt-2 d-flex justify-content-center">
+                <input class="form-check-input" type="checkbox" role="switch" id="shopStatusToggle" style="width:2.5em; height:1.4em;" <%= stall && stall.isOpen ? 'checked' : '' %>>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stat cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="m-stat-card">
+                <div class="icon">🧾</div>
+                <div class="label">Orders Today</div>
+                <div class="value"><%= stats.ordersTodayCount %></div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="m-stat-card">
+                <div class="icon">💰</div>
+                <div class="label">Sales Today</div>
+                <div class="value">$<%= stats.salesToday.toFixed(2) %></div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="m-stat-card">
+                <div class="icon">📈</div>
+                <div class="label">Total Revenue</div>
+                <div class="value">$<%= stats.totalRevenue.toFixed(2) %></div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="m-stat-card">
+                <div class="icon">⭐</div>
+                <div class="label">Best Seller</div>
+                <div class="value" style="font-size:1.05rem;">
+                    <% if (stats.bestSellingDish) { %>
+                        <%= stats.bestSellingDish %> <span class="text-muted" style="font-size:0.8rem;">(<%= stats.bestSellingQty %> sold)</span>
+                    <% } else { %>
+                        <span class="text-muted" style="font-size:0.9rem;">No sales yet</span>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="m-card">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="fw-bold mb-0">Recent Orders</h5>
+            <a href="/merchant/orders" class="btn-brand-outline btn-sm">View All &rarr;</a>
+        </div>
+
+        <% if (stats.recentOrders.length === 0) { %>
+            <div class="m-empty">No orders yet. Once customers order from your stall, they'll show up here.</div>
+        <% } else { %>
+            <div class="table-responsive">
+                <table class="table m-table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Order ID</th>
+                            <th>Customer</th>
+                            <th>Items</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Placed</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% stats.recentOrders.forEach(order => { %>
+                            <tr>
+                                <td class="fw-semibold"><%= order.orderId %></td>
+                                <td><%= order.customerName %></td>
+                                <td class="order-row-items">
+                                    <%= order.items.map(i => `${i.name} x${i.qty}`).join(', ') %>
+                                </td>
+                                <td>$<%= order.total.toFixed(2) %></td>
+                                <td><span class="badge-status status-<%= order.status %>"><%= order.status %></span></td>
+                                <td class="text-muted small"><%= new Date(order.createdAt).toLocaleString() %></td>
+                            </tr>
+                        <% }) %>
+                    </tbody>
+                </table>
+            </div>
+        <% } %>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.getElementById('shopStatusToggle').addEventListener('change', function () {
+        const checkbox = this;
+        checkbox.disabled = true;
+        fetch('/merchant/shop-status', { method: 'POST' })
+            .then(r => r.json())
+            .then(result => {
+                checkbox.disabled = false;
+                if (!result.success) {
+                    checkbox.checked = !checkbox.checked;
+                    return;
+                }
+                const pill = document.querySelector('.shop-status-pill');
+                const label = document.getElementById('shopStatusLabel');
+                pill.classList.toggle('toggle-open', result.isOpen);
+                pill.classList.toggle('toggle-closed', !result.isOpen);
+                label.textContent = result.isOpen ? 'Shop Open' : 'Shop Closed';
+            })
+            .catch(() => {
+                checkbox.disabled = false;
+                checkbox.checked = !checkbox.checked;
+            });
+    });
+</script>
+
+</body>
+</html>
