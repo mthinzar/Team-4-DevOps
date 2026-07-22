@@ -195,6 +195,22 @@
         }
         .dish-card.is-unavailable { opacity: 0.6; cursor: not-allowed; }
 
+        /* Rating line on a dish card — hints that tapping opens the reviews */
+        .dish-rating .see-reviews { color: var(--brand); font-size: 0.72rem; font-weight: 600; }
+        .dish-card:hover .dish-rating .see-reviews { text-decoration: underline; }
+
+        /* Review list inside the dish modal */
+        .dish-reviews { border-top: 1px solid #f0d0d4; padding-top: 1rem; margin-top: 0.25rem; }
+        .review-summary { font-size: 0.82rem; color: #7a7a7a; font-weight: 600; }
+        .review-item { padding: 0.6rem 0; border-bottom: 1px solid #f7ecee; }
+        .review-item:last-child { border-bottom: none; }
+        .review-item .rv-head { display: flex; justify-content: space-between; align-items: center; gap: 0.5rem; }
+        .review-item .rv-name { font-weight: 600; font-size: 0.85rem; }
+        .review-item .rv-stars { color: #f5a623; font-size: 0.85rem; letter-spacing: 1px; white-space: nowrap; }
+        .review-item .rv-date { font-size: 0.72rem; color: #9a9a9a; }
+        .review-item .rv-comment { font-size: 0.84rem; color: #444; margin: 0.25rem 0 0; }
+        .reviews-empty { font-size: 0.84rem; color: #9a9a9a; padding: 0.75rem 0; }
+
         .stall-card:hover {
             transform: translateY(-6px);
             box-shadow: 0 12px 24px rgba(226, 55, 68, 0.1);
@@ -725,6 +741,7 @@
                                     <% if (food.reviewCount > 0) { %>
                                         <span class="stars-sm">★</span> <%= food.avgRating.toFixed(1) %>
                                         <span class="text-muted">(<%= food.reviewCount %>)</span>
+                                        <span class="see-reviews">· See reviews</span>
                                     <% } else { %>
                                         <span class="text-muted">No reviews yet</span>
                                     <% } %>
@@ -793,6 +810,18 @@
                             <textarea class="form-control rounded-3" id="modalNote" rows="3" placeholder="Add your request (subject to restaurant's discretion)"></textarea>
                         </div>
                     </form>
+
+                    <!-- What other students said. Only people who actually collected
+                         this dish can post here, so the list is always genuine. -->
+                    <div class="dish-reviews">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold mb-0">Reviews</h6>
+                            <span class="review-summary" id="reviewSummary"></span>
+                        </div>
+                        <div id="reviewList">
+                            <div class="reviews-empty">Loading reviews…</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="modal-footer border-0 p-3 bg-light d-flex align-items-center justify-content-between">
@@ -1430,10 +1459,69 @@
             }
         });
 
+        // ---- Dish reviews ----
+
+        // Review text is written by other customers, so it is escaped before it
+        // ever goes near innerHTML.
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function loadDishReviews(foodId) {
+            const list = document.getElementById('reviewList');
+            const summary = document.getElementById('reviewSummary');
+
+            summary.textContent = '';
+            list.innerHTML = '<div class="reviews-empty">Loading reviews…</div>';
+
+            if (!foodId) {
+                list.innerHTML = '<div class="reviews-empty">No reviews yet for this dish.</div>';
+                return;
+            }
+
+            fetch(`/api/foods/${encodeURIComponent(foodId)}/reviews`)
+                .then(response => response.json())
+                .then(result => {
+                    if (!result.success) {
+                        list.innerHTML = '<div class="reviews-empty">Could not load reviews.</div>';
+                        return;
+                    }
+
+                    const reviews = result.reviews || [];
+
+                    if (reviews.length === 0) {
+                        list.innerHTML = '<div class="reviews-empty">No reviews yet — order it and be the first to rate it.</div>';
+                        return;
+                    }
+
+                    summary.textContent = `★ ${result.avgRating.toFixed(1)} · ${result.reviewCount} review${result.reviewCount === 1 ? '' : 's'}`;
+
+                    list.innerHTML = reviews.map(review => `
+                        <div class="review-item">
+                            <div class="rv-head">
+                                <span class="rv-name">${escapeHtml(review.userName)}</span>
+                                <span class="rv-stars">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</span>
+                            </div>
+                            <div class="rv-date">${new Date(review.createdAt).toLocaleDateString()}</div>
+                            ${review.comment ? `<p class="rv-comment">${escapeHtml(review.comment)}</p>` : ''}
+                        </div>
+                    `).join('');
+                })
+                .catch(() => {
+                    list.innerHTML = '<div class="reviews-empty">Could not load reviews.</div>';
+                });
+        }
+
         function triggerCustomizeModal(food) {
             activeFood = food;
             currentModalQty = 1;
             modalQty.textContent = '1';
+            loadDishReviews(food.foodId);
 
             document.getElementById('modalBasePrice').textContent = '$' + food.price.toFixed(2);
             document.getElementById('modalNote').value = '';

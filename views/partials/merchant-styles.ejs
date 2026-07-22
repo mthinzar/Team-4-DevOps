@@ -90,12 +90,14 @@
         text-transform: capitalize;
         display: inline-block;
     }
+    /* Four-step order flow, plus cancelled. 'accepted' and 'collected' are
+       legacy values kept only so old order documents still render. */
     .badge-status.status-pending { background: #fff3cd; color: #997404; }
-    .badge-status.status-accepted { background: #cfe2ff; color: #084298; }
     .badge-status.status-preparing,
-    .badge-status.status-collected { background: var(--pink-soft); color: var(--brand); }
+    .badge-status.status-accepted { background: var(--pink-soft); color: var(--brand); }
     .badge-status.status-ready { background: #d1f5df; color: #198754; }
-    .badge-status.status-completed { background: #e2e3e5; color: #41464b; }
+    .badge-status.status-completed,
+    .badge-status.status-collected { background: #e2e3e5; color: #41464b; }
     .badge-status.status-cancelled { background: #f8d7da; color: #842029; }
 
     .m-table th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.4px; color: #7a7a7a; font-weight: 700; border-bottom: 2px solid #f0d0d4; }

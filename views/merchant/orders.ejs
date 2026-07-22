@@ -17,6 +17,32 @@
             border-radius: 30px; padding: 0.3rem 0.9rem; font-size: 0.82rem; font-weight: 600;
         }
         .filter-pill.active { background: var(--brand); color: #fff; }
+        .pay-pill {
+            display: inline-block; font-size: 0.68rem; font-weight: 700; letter-spacing: 0.3px;
+            border-radius: 20px; padding: 0.12rem 0.5rem; margin-top: 0.25rem;
+        }
+        .pay-pill.paid { background: #e4f5ec; color: #1a7f4b; }
+        .pay-pill.unpaid { background: #fdeaea; color: #c52d39; }
+        .btn-mark-paid {
+            display: block; margin-top: 0.3rem; font-size: 0.7rem; font-weight: 600;
+            border: 1px solid var(--brand); color: var(--brand); background: #fff;
+            border-radius: 20px; padding: 0.15rem 0.6rem;
+        }
+        .btn-mark-paid:hover { background: var(--brand); color: #fff; }
+
+        .order-actions { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+        .btn-step {
+            background: var(--brand); color: #fff; border: none; border-radius: 10px;
+            padding: 0.5rem 1.1rem; font-weight: 600; font-size: 0.85rem;
+        }
+        .btn-step:hover:not(:disabled) { background: #c52d39; }
+        .btn-step:disabled { opacity: 0.6; }
+        .btn-cancel-order {
+            background: #fff; color: #7a7a7a; border: 1px solid #ddd;
+            border-radius: 10px; padding: 0.5rem 0.9rem; font-weight: 600; font-size: 0.82rem;
+        }
+        .btn-cancel-order:hover { border-color: #c0392b; color: #c0392b; }
+        .step-done { font-size: 0.85rem; font-weight: 600; color: #7a7a7a; }
     </style>
 </head>
 <body>
@@ -29,8 +55,8 @@
 
     <div class="d-flex flex-wrap gap-2 mb-3" id="statusFilters">
         <button class="filter-pill active" data-filter="all">All</button>
-        <% statuses.forEach(s => { %>
-            <button class="filter-pill" data-filter="<%= s %>"><%= s.charAt(0).toUpperCase() + s.slice(1) %></button>
+        <% ORDER_FLOW.concat('cancelled').forEach(s => { %>
+            <button class="filter-pill" data-filter="<%= s %>"><%= ORDER_STATUS_LABELS[s] %></button>
         <% }) %>
     </div>
 
@@ -39,15 +65,25 @@
     <% } else { %>
         <div id="ordersList">
             <% orders.forEach(order => { %>
-                <div class="order-card" data-order-status="<%= order.status %>">
+                <div class="order-card" data-order-status="<%= order.status %>" data-order-id="<%= order.orderId %>">
                     <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
                         <div>
-                            <div class="fw-bold"><%= order.orderId %> <span class="badge-status status-<%= order.status %> ms-1" id="statusBadge-<%= order.orderId %>"><%= order.status %></span></div>
+                            <div class="fw-bold"><%= order.orderId %> <span class="badge-status status-<%= order.status %> ms-1" id="statusBadge-<%= order.orderId %>"><%= ORDER_STATUS_LABELS[order.status] %></span></div>
                             <div class="text-muted small">
-                                <%= order.customerName %> &middot; <%= new Date(order.createdAt).toLocaleString() %> &middot; <%= order.paymentMethod || 'Card' %>
+                                <%= order.customerName %> &middot; <%= new Date(order.createdAt).toLocaleString() %>
+                                &middot; <%= PAYMENT_LABELS[order.paymentMethod] || 'Card' %>
+                                <% if (order.paymentRef) { %><span class="text-muted">(<%= order.paymentRef %>)</span><% } %>
                             </div>
                         </div>
-                        <div class="fw-bold">$<%= order.total.toFixed(2) %></div>
+                        <div class="text-end">
+                            <div class="fw-bold">$<%= order.total.toFixed(2) %></div>
+                            <% if (order.paymentStatus === 'unpaid') { %>
+                                <span class="pay-pill unpaid" id="payPill-<%= order.orderId %>">Unpaid</span>
+                                <button type="button" class="btn-mark-paid" data-order-id="<%= order.orderId %>">Mark paid</button>
+                            <% } else { %>
+                                <span class="pay-pill paid">Paid</span>
+                            <% } %>
+                        </div>
                     </div>
 
                     <ul class="order-items-list list-unstyled mb-2">
@@ -57,13 +93,20 @@
                     </ul>
 
                     <div class="d-flex flex-wrap align-items-center gap-3">
-                        <div>
-                            <label class="form-label mb-1 small">Order Status</label>
-                            <select class="form-select form-select-sm status-select" data-order-id="<%= order.orderId %>" style="width:auto;">
-                                <% statuses.forEach(s => { %>
-                                    <option value="<%= s %>" <%= order.status === s ? 'selected' : '' %>><%= s.charAt(0).toUpperCase() + s.slice(1) %></option>
-                                <% }) %>
-                            </select>
+                        <div class="order-actions" id="actions-<%= order.orderId %>">
+                            <% if (NEXT_STEP[order.status]) { %>
+                                <button type="button" class="btn-step"
+                                        data-order-id="<%= order.orderId %>"
+                                        data-next="<%= NEXT_STEP[order.status].status %>">
+                                    <%= NEXT_STEP[order.status].label %> &rarr;
+                                </button>
+                            <% } else { %>
+                                <span class="step-done"><%= ORDER_STATUS_LABELS[order.status] %></span>
+                            <% } %>
+
+                            <% if (CANCELLABLE.includes(order.status)) { %>
+                                <button type="button" class="btn-cancel-order" data-order-id="<%= order.orderId %>">Cancel</button>
+                            <% } %>
                         </div>
 
                         <div>
@@ -96,30 +139,74 @@
         });
     });
 
-    document.querySelectorAll('.status-select').forEach(select => {
-        select.addEventListener('change', function () {
+    // Moves an order one step along the flow (or cancels it) and re-renders
+    // just that card's action area with whatever the server says comes next.
+    function changeStatus(orderId, status, button) {
+        button.disabled = true;
+        fetch(`/merchant/orders/${orderId}/status`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status })
+        })
+        .then(r => r.json())
+        .then(result => {
+            if (!result.success) {
+                button.disabled = false;
+                alert(result.message || 'Could not update this order.');
+                return;
+            }
+
+            const badge = document.getElementById(`statusBadge-${orderId}`);
+            badge.className = `badge-status status-${result.status} ms-1`;
+            badge.textContent = result.label;
+
+            const card = document.querySelector(`.order-card[data-order-id="${orderId}"]`);
+            card.dataset.orderStatus = result.status;
+
+            const actions = document.getElementById(`actions-${orderId}`);
+            actions.innerHTML = result.nextStep
+                ? `<button type="button" class="btn-step" data-order-id="${orderId}" data-next="${result.nextStep.status}">${result.nextStep.label} &rarr;</button>`
+                : `<span class="step-done">${result.label}</span>`;
+            if (result.cancellable) {
+                actions.insertAdjacentHTML('beforeend',
+                    `<button type="button" class="btn-cancel-order" data-order-id="${orderId}">Cancel</button>`);
+            }
+
+            const activeFilter = document.querySelector('#statusFilters .filter-pill.active').dataset.filter;
+            if (activeFilter !== 'all' && activeFilter !== result.status) {
+                card.style.display = 'none';
+            }
+        })
+        .catch(() => { button.disabled = false; });
+    }
+
+    // Delegated so the buttons keep working after a card re-renders itself.
+    document.addEventListener('click', event => {
+        const step = event.target.closest('.btn-step');
+        if (step) {
+            changeStatus(step.dataset.orderId, step.dataset.next, step);
+            return;
+        }
+        const cancel = event.target.closest('.btn-cancel-order');
+        if (cancel && confirm('Cancel this order? The customer will see it as cancelled.')) {
+            changeStatus(cancel.dataset.orderId, 'cancelled', cancel);
+        }
+    });
+
+    document.querySelectorAll('.btn-mark-paid').forEach(btn => {
+        btn.addEventListener('click', function () {
             const orderId = this.dataset.orderId;
-            const status = this.value;
             this.disabled = true;
-            fetch(`/merchant/orders/${orderId}/status`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ status })
-            })
-            .then(r => r.json())
-            .then(result => {
-                this.disabled = false;
-                if (!result.success) return;
-                const badge = document.getElementById(`statusBadge-${orderId}`);
-                badge.className = `badge-status status-${status} ms-1`;
-                badge.textContent = status;
-                this.closest('.order-card').dataset.orderStatus = status;
-                const activeFilter = document.querySelector('#statusFilters .filter-pill.active').dataset.filter;
-                if (activeFilter !== 'all' && activeFilter !== status) {
-                    this.closest('.order-card').style.display = 'none';
-                }
-            })
-            .catch(() => { this.disabled = false; });
+            fetch(`/merchant/orders/${orderId}/mark-paid`, { method: 'POST' })
+                .then(r => r.json())
+                .then(result => {
+                    if (!result.success) { this.disabled = false; return; }
+                    const pill = document.getElementById(`payPill-${orderId}`);
+                    pill.className = 'pay-pill paid';
+                    pill.textContent = 'Paid';
+                    this.remove();
+                })
+                .catch(() => { this.disabled = false; });
         });
     });
 

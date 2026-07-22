@@ -19,6 +19,14 @@ const {
     createAndClaimStall
 } = require('./data/merchants');
 const { getDashboardStats, getStatsPageData } = require('./data/merchantStats');
+const { priceCart } = require('./data/pricing');
+const {
+    PAYMENT_METHODS,
+    authoriseCard,
+    buildPayNowPayload,
+    newPaymentReference
+} = require('./data/payments');
+const QRCode = require('qrcode');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -277,7 +285,8 @@ app.get('/merchant/dashboard', requireMerchant, attachMerchantStall, async (req,
         const stallId = req.session.merchant.stallId;
         const stall = await db.collection('stalls').findOne({ id: stallId });
         const stats = await getDashboardStats(stallId);
-        res.render('merchant/dashboard', { stall, stats });
+        stats.recentOrders.forEach(order => { order.status = normaliseStatus(order.status); });
+        res.render('merchant/dashboard', { stall, stats, ORDER_STATUS_LABELS });
     } catch (err) {
         console.error(err);
         res.status(500).send('Could not load your dashboard.');
@@ -471,7 +480,39 @@ app.post('/merchant/menu/:foodId/toggle-soldout', requireMerchant, async (req, r
 // Merchant order management — scoped to the merchant's own stallId.
 // ------------------------------------------------------------------
 
-const ORDER_STATUSES = ['pending', 'accepted', 'preparing', 'ready', 'completed', 'cancelled'];
+// The order lifecycle is a straight line. A merchant can move an order to the
+// next step, or cancel it before it is ready — nothing else. The old six-entry
+// dropdown let a brand-new order jump straight to "collected", or a finished
+// order slide back to the start, which is what made the queue behave oddly.
+const ORDER_FLOW = ['pending', 'preparing', 'ready', 'completed'];
+
+const ORDER_STATUS_LABELS = {
+    pending: 'New order',
+    preparing: 'Preparing',
+    ready: 'Ready for collection',
+    completed: 'Collected',
+    cancelled: 'Cancelled'
+};
+
+// The single action button shown on each order, keyed by its current status.
+const NEXT_STEP = {
+    pending:   { status: 'preparing', label: 'Accept & start preparing' },
+    preparing: { status: 'ready',     label: 'Mark ready for collection' },
+    ready:     { status: 'completed', label: 'Mark collected' }
+};
+
+const CANCELLABLE = ['pending', 'preparing'];
+
+// Older documents were written with 'accepted' and 'collected'. Fold them into
+// the four-step flow on read so history keeps working without a migration.
+function normaliseStatus(status) {
+    if (status === 'accepted') return 'preparing';
+    if (status === 'collected') return 'completed';
+    if (status === 'cancelled' || ORDER_FLOW.includes(status)) return status;
+    return 'pending';
+}
+
+const PAYMENT_LABELS = { paynow: 'PayNow', card: 'Card', counter: 'Pay at stall' };
 
 app.get('/merchant/orders', requireMerchant, attachMerchantStall, async (req, res) => {
     try {
@@ -480,34 +521,90 @@ app.get('/merchant/orders', requireMerchant, attachMerchantStall, async (req, re
             .find({ stallId: req.session.merchant.stallId })
             .sort({ createdAt: -1 })
             .toArray();
-        res.render('merchant/orders', { orders, statuses: ORDER_STATUSES });
+
+        orders.forEach(order => { order.status = normaliseStatus(order.status); });
+
+        res.render('merchant/orders', {
+            orders,
+            ORDER_FLOW,
+            ORDER_STATUS_LABELS,
+            NEXT_STEP,
+            CANCELLABLE,
+            PAYMENT_LABELS
+        });
     } catch (err) {
         console.error(err);
         res.status(500).send('Could not load your orders.');
     }
 });
 
+// Advances an order one step, or cancels it. Any other move is rejected, so
+// the queue can never show an order as collected before it was ever cooked.
 app.post('/merchant/orders/:orderId/status', requireMerchant, async (req, res) => {
-    const status = req.body.status;
-    if (!ORDER_STATUSES.includes(status)) {
-        return res.status(400).json({ success: false, message: 'Invalid status.' });
-    }
+    const requested = String(req.body.status || '');
+
     try {
         const db = getDB();
-        const update = { status, statusUpdatedAt: new Date() };
-        if (status === 'completed') update.collectedAt = new Date();
+        const order = await db.collection('orders').findOne({
+            orderId: req.params.orderId,
+            stallId: req.session.merchant.stallId
+        });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found.' });
+        }
 
-        const result = await db.collection('orders').updateOne(
-            { orderId: req.params.orderId, stallId: req.session.merchant.stallId },
-            { $set: update }
+        const current = normaliseStatus(order.status);
+
+        if (requested === 'cancelled') {
+            if (!CANCELLABLE.includes(current)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'An order can only be cancelled before it is ready for collection.'
+                });
+            }
+        } else {
+            const next = NEXT_STEP[current];
+            if (!next || next.status !== requested) {
+                return res.status(400).json({
+                    success: false,
+                    message: `"${ORDER_STATUS_LABELS[current]}" cannot move to that step.`
+                });
+            }
+        }
+
+        const update = { status: requested, statusUpdatedAt: new Date() };
+        if (requested === 'completed') update.collectedAt = new Date();
+
+        await db.collection('orders').updateOne({ _id: order._id }, { $set: update });
+
+        const nextStep = NEXT_STEP[requested] || null;
+        res.json({
+            success: true,
+            status: requested,
+            label: ORDER_STATUS_LABELS[requested],
+            nextStep,
+            cancellable: CANCELLABLE.includes(requested)
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not update order status.' });
+    }
+});
+
+// Settles a "pay at stall" order once the customer has handed over the money.
+app.post('/merchant/orders/:orderId/mark-paid', requireMerchant, async (req, res) => {
+    try {
+        const result = await getDB().collection('orders').updateOne(
+            { orderId: req.params.orderId, stallId: req.session.merchant.stallId, paymentStatus: 'unpaid' },
+            { $set: { paymentStatus: 'paid', paidAt: new Date() } }
         );
         if (result.matchedCount === 0) {
-            return res.status(404).json({ success: false, message: 'Order not found.' });
+            return res.status(404).json({ success: false, message: 'No unpaid order with that ID.' });
         }
         res.json({ success: true });
     } catch (err) {
         console.error(err);
-        res.status(500).json({ success: false, message: 'Could not update order status.' });
+        res.status(500).json({ success: false, message: 'Could not mark the order as paid.' });
     }
 });
 
@@ -647,18 +744,67 @@ app.post('/api/foods/:foodId/reviews', async (req, res) => {
         return res.status(401).json({ success: false, message: 'Please log in to leave a review.' });
     }
 
-    const { rating, comment } = req.body || {};
-    if (!rating || rating < 1 || rating > 5) {
-        return res.status(400).json({ success: false, message: 'Please choose a star rating.' });
+    // Only a real number or a plain numeric string counts. The previous check
+    // let strings and booleans through and stored them as 5 stars; a bare
+    // Number() cast is not enough either, since Number(true) === 1 and
+    // Number(['3']) === 3 would both slip past.
+    const rawRating = (req.body || {}).rating;
+    const rating =
+        typeof rawRating === 'number' ? rawRating
+        : (typeof rawRating === 'string' && /^[1-5]$/.test(rawRating.trim())) ? Number(rawRating.trim())
+        : NaN;
+    const comment = (req.body || {}).comment;
+
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+        return res.status(400).json({ success: false, message: 'Please choose a star rating from 1 to 5.' });
     }
 
     try {
-        await addReview(req.params.foodId, {
+        const db = getDB();
+        const foodId = req.params.foodId;
+
+        // "Pickup-verified": you can only review a dish you actually ordered
+        // and collected. This was previously enforced only by the tracking
+        // page's UI, so any logged-in user could review any dish.
+        const collectedOrder = await db.collection('orders').findOne({
             userId: req.session.user.id,
-            userName: req.session.user.name,
-            rating,
-            comment
+            status: 'completed',
+            'items.foodId': foodId
         });
+        if (!collectedOrder) {
+            return res.status(403).json({
+                success: false,
+                message: 'You can only review a dish once you have collected an order containing it.'
+            });
+        }
+
+        // One review per dish per customer — updating replaces the old one
+        // rather than stacking another vote onto the average.
+        const alreadyReviewed = await db.collection('reviews').findOne({
+            foodId,
+            userId: req.session.user.id
+        });
+
+        if (alreadyReviewed) {
+            await db.collection('reviews').updateOne(
+                { _id: alreadyReviewed._id },
+                {
+                    $set: {
+                        rating,
+                        comment: comment ? String(comment).trim().slice(0, 500) : '',
+                        updatedAt: new Date()
+                    }
+                }
+            );
+        } else {
+            await addReview(foodId, {
+                userId: req.session.user.id,
+                userName: req.session.user.name,
+                rating,
+                comment,
+                orderId: collectedOrder.orderId
+            });
+        }
 
         const [reviews, summary] = await Promise.all([
             getReviewsForFood(req.params.foodId),
@@ -675,113 +821,293 @@ app.get('/checkout', (req, res) => {
     res.render('checkout', { images });
 });
 
-function luhnValid(number) {
-    const digits = String(number).replace(/\s+/g, '');
-    if (!/^\d{13,19}$/.test(digits)) return false;
-    let sum = 0;
-    let double = false;
-    for (let i = digits.length - 1; i >= 0; i--) {
-        let d = Number(digits[i]);
-        if (double) {
-            d *= 2;
-            if (d > 9) d -= 9;
+// ------------------------------------------------------------------
+// Checkout & payments
+//
+// Every route below re-prices the cart from the database. The browser's
+// cart is a convenience for the shopper, never a source of truth for
+// what anything costs.
+// ------------------------------------------------------------------
+
+const PAYNOW_WINDOW_MS = 5 * 60 * 1000;   // QR validity, like a real dynamic PayNow code
+const PAYNOW_SETTLE_MS = 4000;            // stand-in for the payer completing it in their bank app
+
+// Loads the cart's foods and stalls, re-prices everything server-side and
+// checks each stall is still open and each dish still available.
+async function prepareCart(items) {
+    const db = getDB();
+
+    const foodIds = [...new Set((items || []).map(i => i && i.foodId).filter(Boolean))];
+    const foods = foodIds.length
+        ? await db.collection('foods').find({ id: { $in: foodIds } }).toArray()
+        : [];
+    const foodById = {};
+    foods.forEach(f => { foodById[f.id] = f; });
+
+    const priced = priceCart(items, foodById);
+    if (priced.error) return { error: priced.error };
+
+    const stallIds = [...new Set(foods.map(f => f.stall_id))];
+    const stalls = stallIds.length
+        ? await db.collection('stalls').find({ id: { $in: stallIds } }).toArray()
+        : [];
+    const stallById = {};
+    stalls.forEach(s => { stallById[s.id] = s; });
+
+    for (const line of priced.lines) {
+        const food = foodById[line.foodId];
+        if (food.soldOut) {
+            return { error: `${food.name} just sold out. Please remove it from your cart.` };
         }
-        sum += d;
-        double = !double;
+        const stall = stallById[food.stall_id];
+        if (stall && stall.isOpen === false) {
+            return { error: `${stall.name} is currently closed for new orders.` };
+        }
     }
-    return sum % 10 === 0;
+
+    return { lines: priced.lines, total: priced.total };
 }
 
-// Payment splits the cart into one order per stall, so each merchant only
-// ever sees the portion of the order that belongs to their own store.
+// Splits a priced cart into one order per stall, so each merchant only ever
+// sees the portion of the order that belongs to their own store.
+async function createOrders({ lines, userId, customerName, payment }) {
+    const db = getDB();
+
+    const groups = {};
+    lines.forEach(line => {
+        if (!groups[line.stallId]) groups[line.stallId] = [];
+        groups[line.stallId].push(line);
+    });
+
+    const createdOrders = [];
+    let orderIndex = 0;
+
+    for (const [stallId, groupLines] of Object.entries(groups)) {
+        orderIndex += 1;
+        const groupTotal = Math.round(groupLines.reduce((sum, l) => sum + l.lineTotal, 0) * 100) / 100;
+        const orderId = 'FH-' + (Date.now() + orderIndex).toString().slice(-6);
+        const queueNum = Math.floor(Math.random() * 899) + 101;
+        const prepTimeSeconds = 180 + groupLines.reduce((sum, l) => sum + l.qty * 90, 0);
+
+        const order = {
+            orderId,
+            userId,
+            customerName,
+            stallId,
+            items: groupLines.map(l => ({
+                name: l.name,
+                price: l.price,
+                qty: l.qty,
+                image: l.image,
+                foodId: l.foodId,
+                options: l.options
+            })),
+            total: groupTotal,
+            paymentMethod: payment.method,
+            paymentStatus: payment.status,          // 'paid' | 'unpaid'
+            paymentRef: payment.reference || null,
+            paymentDetail: payment.detail || null,  // e.g. "Visa ····4242"
+            queueNum,
+            prepTimeSeconds,
+            readyAt: Date.now() + prepTimeSeconds * 1000,
+            status: 'pending',
+            createdAt: new Date()
+        };
+
+        await db.collection('orders').insertOne(order);
+        createdOrders.push(order);
+    }
+
+    return createdOrders;
+}
+
+function orderSummary(orders) {
+    return orders.map(o => ({ orderId: o.orderId, queueNum: o.queueNum, readyAt: o.readyAt, total: o.total }));
+}
+
+// Step 1 of PayNow: price the cart and hand back a scannable dynamic QR.
+// No order exists yet — it is only created once the payment settles.
+app.post('/api/payments/paynow', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: 'Please log in to complete checkout.' });
+    }
+
+    try {
+        const prepared = await prepareCart((req.body || {}).items);
+        if (prepared.error) {
+            return res.status(400).json({ success: false, message: prepared.error });
+        }
+
+        const reference = newPaymentReference();
+        const now = Date.now();
+        const expiresAt = now + PAYNOW_WINDOW_MS;
+
+        const payload = buildPayNowPayload({ amount: prepared.total, reference, expiresAt: new Date(expiresAt) });
+        const qrDataUrl = await QRCode.toDataURL(payload, { errorCorrectionLevel: 'M', margin: 1, width: 320 });
+
+        await getDB().collection('payments').insertOne({
+            reference,
+            method: 'paynow',
+            userId: req.session.user.id,
+            amount: prepared.total,
+            status: 'pending',
+            settlesAt: now + PAYNOW_SETTLE_MS,
+            expiresAt: new Date(expiresAt),
+            consumed: false,
+            createdAt: new Date()
+        });
+
+        res.json({
+            success: true,
+            reference,
+            amount: prepared.total,
+            qr: qrDataUrl,
+            payload,
+            expiresAt
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not start the PayNow payment. Please try again.' });
+    }
+});
+
+// Step 2: the checkout page polls this the way a terminal waits for a bank
+// push notification. Settlement is time-based so the demo is reproducible.
+app.get('/api/payments/paynow/:reference', async (req, res) => {
+    if (!req.session.user) {
+        return res.status(401).json({ success: false, message: 'Please log in.' });
+    }
+
+    try {
+        const db = getDB();
+        const payment = await db.collection('payments').findOne({
+            reference: req.params.reference,
+            userId: req.session.user.id
+        });
+
+        if (!payment) {
+            return res.status(404).json({ success: false, message: 'Payment not found.' });
+        }
+
+        if (payment.status === 'pending') {
+            if (Date.now() > new Date(payment.expiresAt).getTime()) {
+                await db.collection('payments').updateOne({ reference: payment.reference }, { $set: { status: 'expired' } });
+                return res.json({ success: true, status: 'expired' });
+            }
+            if (Date.now() >= payment.settlesAt) {
+                await db.collection('payments').updateOne(
+                    { reference: payment.reference },
+                    { $set: { status: 'succeeded', settledAt: new Date() } }
+                );
+                return res.json({ success: true, status: 'succeeded' });
+            }
+        }
+
+        res.json({ success: true, status: payment.status });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not check the payment status.' });
+    }
+});
+
+// Final step for every method: re-price, take payment, create the orders.
 app.post('/pay', async (req, res) => {
     if (!req.session.user) {
         return res.status(401).json({ success: false, message: 'Please log in to complete checkout.' });
     }
 
-    const { items, customer, card } = req.body || {};
-
-    if (!Array.isArray(items) || items.length === 0) {
-        return res.status(400).json({ success: false, message: 'Your cart is empty. Add a dish before paying.' });
-    }
-
-    const total = items.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
-    if (!(total > 0)) {
-        return res.status(400).json({ success: false, message: 'Order total is invalid.' });
-    }
-
-    if (!card || !luhnValid(card.number)) {
-        return res.json({ success: false, message: 'Card declined. Check the number and try again.' });
-    }
+    const { items, customer, card, method, paymentReference } = req.body || {};
+    const payMethod = PAYMENT_METHODS.includes(method) ? method : 'card';
 
     try {
         const db = getDB();
 
-        // Re-verify stock/shop status server-side — never trust the client's
-        // cart for this.
-        const foodIds = items.map(i => i.foodId).filter(Boolean);
-        const foods = foodIds.length ? await db.collection('foods').find({ id: { $in: foodIds } }).toArray() : [];
-        const foodById = {};
-        foods.forEach(f => { foodById[f.id] = f; });
-
-        const stallIds = [...new Set(foods.map(f => f.stall_id))];
-        const stalls = stallIds.length ? await db.collection('stalls').find({ id: { $in: stallIds } }).toArray() : [];
-        const stallById = {};
-        stalls.forEach(s => { stallById[s.id] = s; });
-
-        for (const item of items) {
-            const food = item.foodId ? foodById[item.foodId] : null;
-            if (food && food.soldOut) {
-                return res.status(400).json({ success: false, message: `${item.name} just sold out. Please remove it from your cart.` });
-            }
-            const stall = food ? stallById[food.stall_id] : null;
-            if (stall && stall.isOpen === false) {
-                return res.status(400).json({ success: false, message: `${stall.name} is currently closed for new orders.` });
-            }
+        // Prices always come from the database, never from the request body.
+        const prepared = await prepareCart(items);
+        if (prepared.error) {
+            return res.status(400).json({ success: false, message: prepared.error });
         }
 
-        // Group cart items by stall so each stall gets its own order document.
-        const groups = {};
-        items.forEach(item => {
-            const food = item.foodId ? foodById[item.foodId] : null;
-            const stallId = food ? food.stall_id : 'unknown';
-            if (!groups[stallId]) groups[stallId] = [];
-            groups[stallId].push(item);
-        });
+        const customerName = (customer && String(customer.name || '').trim()) || req.session.user.name;
+        let payment;
 
-        const createdOrders = [];
-        let orderIndex = 0;
-        for (const [stallId, groupItems] of Object.entries(groups)) {
-            orderIndex += 1;
-            const groupTotal = groupItems.reduce((sum, item) => sum + Number(item.price) * Number(item.qty), 0);
-            const orderId = 'FH-' + (Date.now() + orderIndex).toString().slice(-6);
-            const queueNum = Math.floor(Math.random() * 899) + 101;
-            const prepTimeSeconds = 180 + groupItems.reduce((sum, item) => sum + (Number(item.qty) || 1) * 90, 0);
-            const readyAt = Date.now() + prepTimeSeconds * 1000;
-
-            const order = {
-                orderId,
-                userId: req.session.user.id,
-                customerName: (customer && customer.name) || req.session.user.name,
-                stallId,
-                items: groupItems.map(i => ({ name: i.name, price: Number(i.price), qty: Number(i.qty), image: i.image || null, foodId: i.foodId || null })),
-                total: Number(groupTotal.toFixed(2)),
-                paymentMethod: 'Card',
-                queueNum,
-                prepTimeSeconds,
-                readyAt,
-                status: 'pending',
-                createdAt: new Date()
+        if (payMethod === 'card') {
+            const auth = authoriseCard(card || {});
+            if (!auth.approved) {
+                return res.json({ success: false, code: auth.code, message: auth.message });
+            }
+            payment = {
+                method: 'card',
+                status: 'paid',
+                reference: auth.authCode,
+                detail: `${auth.brandLabel} ····${auth.last4}`
             };
-            await db.collection('orders').insertOne(order);
-            createdOrders.push(order);
+            await db.collection('payments').insertOne({
+                reference: auth.authCode,
+                method: 'card',
+                userId: req.session.user.id,
+                amount: prepared.total,
+                status: 'succeeded',
+                brand: auth.brand,
+                last4: auth.last4,   // full card number is never stored
+                consumed: true,
+                createdAt: new Date(),
+                settledAt: new Date()
+            });
+
+        } else if (payMethod === 'paynow') {
+            // The QR must have actually settled, belong to this user, match the
+            // amount, and not already have been spent on another order.
+            const record = await db.collection('payments').findOne({
+                reference: String(paymentReference || ''),
+                userId: req.session.user.id,
+                method: 'paynow'
+            });
+
+            if (!record) {
+                return res.status(400).json({ success: false, message: 'We could not find that PayNow payment. Please scan a new QR.' });
+            }
+            if (record.consumed) {
+                return res.status(400).json({ success: false, message: 'That PayNow payment has already been used for an order.' });
+            }
+            if (record.status !== 'succeeded') {
+                return res.status(400).json({ success: false, message: 'We have not received your PayNow transfer yet.' });
+            }
+            if (Math.abs(record.amount - prepared.total) > 0.005) {
+                return res.status(400).json({ success: false, message: 'Your cart changed after the QR was generated. Please scan a new QR.' });
+            }
+
+            const claim = await db.collection('payments').updateOne(
+                { reference: record.reference, consumed: false },
+                { $set: { consumed: true } }
+            );
+            if (claim.modifiedCount === 0) {
+                return res.status(400).json({ success: false, message: 'That PayNow payment has already been used for an order.' });
+            }
+
+            payment = { method: 'paynow', status: 'paid', reference: record.reference, detail: 'PayNow' };
+
+        } else {
+            // Pay at the stall on collection — the order is placed unpaid and
+            // the merchant settles it when the customer picks it up.
+            payment = { method: 'counter', status: 'unpaid', reference: null, detail: 'Pay at counter' };
         }
+
+        const createdOrders = await createOrders({
+            lines: prepared.lines,
+            userId: req.session.user.id,
+            customerName,
+            payment
+        });
 
         res.json({
             success: true,
-            orders: createdOrders.map(o => ({ orderId: o.orderId, queueNum: o.queueNum, readyAt: o.readyAt, total: o.total })),
-            total: Number(total.toFixed(2)),
-            name: (customer && customer.name) || req.session.user.name
+            orders: orderSummary(createdOrders),
+            total: prepared.total,
+            paymentMethod: payment.method,
+            paymentStatus: payment.status,
+            paymentDetail: payment.detail,
+            name: customerName
         });
     } catch (err) {
         console.error(err);
@@ -789,10 +1115,18 @@ app.post('/pay', async (req, res) => {
     }
 });
 
+// Scoped to the signed-in customer: order IDs are sequential-ish and easy to
+// guess, so an order must belong to you before its contents are rendered.
 app.get('/track/:orderId', async (req, res) => {
+    if (!req.session.user) {
+        return res.redirect('/?loginRequired=1');
+    }
     try {
         const db = getDB();
-        const order = await db.collection('orders').findOne({ orderId: req.params.orderId });
+        const order = await db.collection('orders').findOne({
+            orderId: req.params.orderId,
+            userId: req.session.user.id
+        });
         res.render('track', { images, order });
     } catch (err) {
         console.error(err);
@@ -876,10 +1210,31 @@ app.get('/orders', async (req, res) => {
             .find({ userId: req.session.user.id })
             .sort({ createdAt: -1 })
             .toArray();
-        res.render('orders', { images, orders });
+
+        orders.forEach(order => { order.status = normaliseStatus(order.status); });
+
+        // Attach this customer's own review for each dish they've bought, so the
+        // rating panel can pre-fill and let them revise a rating instead of
+        // posting a second one.
+        const foodIds = [...new Set(
+            orders.flatMap(o => (o.items || []).map(i => i.foodId)).filter(Boolean)
+        )];
+
+        const myReviews = foodIds.length
+            ? await db.collection('reviews')
+                .find({ userId: req.session.user.id, foodId: { $in: foodIds } })
+                .toArray()
+            : [];
+
+        const reviewByFood = {};
+        myReviews.forEach(r => {
+            reviewByFood[r.foodId] = { rating: r.rating, comment: r.comment || '' };
+        });
+
+        res.render('orders', { images, orders, reviewByFood });
     } catch (err) {
         console.error(err);
-        res.render('orders', { images, orders: [] });
+        res.render('orders', { images, orders: [], reviewByFood: {} });
     }
 });
 

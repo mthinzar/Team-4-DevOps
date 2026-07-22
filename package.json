@@ -27,7 +27,8 @@
     "express-session": "^1.18.0",
     "mongodb": "^7.5.0",
     "mongoose": "^9.7.4",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "qrcode": "^1.5.4"
   },
   "type": "commonjs"
 }

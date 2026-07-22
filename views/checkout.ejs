@@ -74,6 +74,71 @@
         #payAlert { display: none; border-radius: 10px; font-size: 0.88rem; padding: 0.7rem 0.9rem; }
         .lock-note { font-size: 0.75rem; color: #7a7a7a; }
 
+        /* ---- Payment method chooser ---- */
+        .pay-methods { display: grid; gap: 0.6rem; margin-bottom: 1.4rem; }
+        @media (min-width: 576px) { .pay-methods { grid-template-columns: repeat(3, 1fr); } }
+
+        .pay-method {
+            border: 1.5px solid #f0d0d4;
+            background: #fff;
+            border-radius: 14px;
+            padding: 0.9rem 0.8rem;
+            text-align: left;
+            cursor: pointer;
+            transition: 0.15s;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
+        }
+        .pay-method:hover { border-color: #e0a4ac; }
+        .pay-method.active { border-color: var(--brand); background: var(--pink-soft); }
+        .pay-method .pm-top { display: flex; align-items: center; gap: 0.45rem; }
+        .pay-method .pm-name { font-weight: 600; font-size: 0.92rem; }
+        .pay-method .pm-sub { font-size: 0.72rem; color: #7a7a7a; line-height: 1.3; }
+        .pay-method .pm-badge {
+            margin-left: auto; font-size: 0.6rem; font-weight: 700; letter-spacing: 0.3px;
+            background: var(--brand); color: #fff; border-radius: 20px; padding: 0.1rem 0.45rem;
+        }
+
+        .pay-panel { display: none; }
+        .pay-panel.active { display: block; }
+
+        /* ---- Card fields ---- */
+        .card-input-wrap { position: relative; }
+        .card-brand-mark {
+            position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%);
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 0.4px;
+            color: #6b4a4f; background: var(--pink-soft); border-radius: 5px;
+            padding: 0.18rem 0.4rem; opacity: 0; transition: opacity 0.15s;
+        }
+        .card-brand-mark.show { opacity: 1; }
+        .accepted-brands { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.45rem; }
+        .accepted-brands span {
+            font-size: 0.62rem; font-weight: 600; color: #7a7a7a;
+            border: 1px solid #eee; border-radius: 4px; padding: 0.12rem 0.35rem;
+        }
+
+        /* ---- PayNow ---- */
+        .paynow-box { text-align: center; padding: 0.5rem 0; }
+        .paynow-qr {
+            width: 232px; height: 232px; border-radius: 14px; background: #fff;
+            border: 1px solid #f0d0d4; padding: 0.5rem; margin: 0 auto 0.9rem; display: block;
+        }
+        .paynow-amount { font-size: 1.5rem; font-weight: 700; }
+        .paynow-ref {
+            display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.78rem; background: var(--pink-soft); color: var(--brand);
+            border-radius: 6px; padding: 0.2rem 0.55rem; margin-top: 0.3rem;
+        }
+        .paynow-wait { display: flex; align-items: center; justify-content: center; gap: 0.5rem; font-size: 0.85rem; color: #6b4a4f; margin-top: 0.9rem; }
+        .paynow-timer { font-size: 0.76rem; color: #7a7a7a; margin-top: 0.35rem; }
+        .paynow-settled { color: #1a7f4b; font-weight: 600; }
+
+        .counter-note {
+            background: var(--pink-soft); border-radius: 12px; padding: 1rem 1.1rem;
+            font-size: 0.85rem; color: #6b4a4f; line-height: 1.55;
+        }
+
         .success-wrap { display: none; text-align: center; }
         .success-check {
             width: 84px;
@@ -194,12 +259,7 @@
         <!-- Payment form -->
         <div class="col-lg-7 order-lg-1">
             <div class="checkout-card">
-                <h5 class="block-title">Payment details</h5>
-
-                <div class="demo-hint mb-3">
-                    Demo only - no real payment is taken. Use card <strong>4242 4242 4242 4242</strong>,
-                    any future expiry, and any 3-digit CVV for an approved order.
-                </div>
+                <h5 class="block-title">Your details</h5>
 
                 <div class="alert alert-danger" id="payAlert" role="alert"></div>
 
@@ -210,33 +270,107 @@
                         <div class="invalid-msg">Enter your name.</div>
                     </div>
 
-                    <div class="mb-3" id="f-email">
+                    <div class="mb-4" id="f-email">
                         <label class="form-label" for="email">Email</label>
                         <input type="email" class="form-control" id="email" placeholder="you@example.com" autocomplete="email">
                         <div class="invalid-msg">Enter a valid email address.</div>
                     </div>
 
-                    <div class="mb-3" id="f-card">
-                        <label class="form-label" for="card">Card number</label>
-                        <input type="text" inputmode="numeric" class="form-control" id="card" placeholder="4242 4242 4242 4242" autocomplete="cc-number" maxlength="23">
-                        <div class="invalid-msg">Enter a valid card number.</div>
+                    <h5 class="block-title mb-3">How would you like to pay?</h5>
+
+                    <div class="pay-methods">
+                        <button type="button" class="pay-method active" data-method="paynow">
+                            <span class="pm-top">
+                                <span>🇸🇬</span>
+                                <span class="pm-name">PayNow</span>
+                                <span class="pm-badge">POPULAR</span>
+                            </span>
+                            <span class="pm-sub">Scan with any Singapore banking app</span>
+                        </button>
+                        <button type="button" class="pay-method" data-method="card">
+                            <span class="pm-top">
+                                <span>💳</span>
+                                <span class="pm-name">Card</span>
+                            </span>
+                            <span class="pm-sub">Visa, Mastercard, Amex, UnionPay</span>
+                        </button>
+                        <button type="button" class="pay-method" data-method="counter">
+                            <span class="pm-top">
+                                <span>🏪</span>
+                                <span class="pm-name">Pay at stall</span>
+                            </span>
+                            <span class="pm-sub">Settle with the stall on collection</span>
+                        </button>
                     </div>
 
-                    <div class="row">
-                        <div class="col-6 mb-3" id="f-exp">
-                            <label class="form-label" for="expiry">Expiry</label>
-                            <input type="text" inputmode="numeric" class="form-control" id="expiry" placeholder="MM/YY" autocomplete="cc-exp" maxlength="5">
-                            <div class="invalid-msg">Use MM/YY, in the future.</div>
+                    <!-- PayNow -->
+                    <div class="pay-panel active" id="panel-paynow">
+                        <div class="paynow-box" id="paynowIdle">
+                            <p class="text-muted small mb-3">
+                                We'll generate a single-use PayNow QR for the exact amount.
+                                Scan it with DBS PayLah!, OCBC, UOB TMRW or any SGQR-capable app.
+                            </p>
                         </div>
-                        <div class="col-6 mb-3" id="f-cvv">
-                            <label class="form-label" for="cvv">CVV</label>
-                            <input type="text" inputmode="numeric" class="form-control" id="cvv" placeholder="123" autocomplete="cc-csc" maxlength="4">
-                            <div class="invalid-msg">3 or 4 digits.</div>
+
+                        <div class="paynow-box" id="paynowLive" style="display:none;">
+                            <img class="paynow-qr" id="paynowQr" alt="PayNow QR code">
+                            <div class="paynow-amount" id="paynowAmount">$0.00</div>
+                            <div class="paynow-ref" id="paynowRef">—</div>
+                            <div class="paynow-wait" id="paynowWait">
+                                <span class="spinner-border spinner-border-sm" style="color: var(--brand);" role="status"></span>
+                                <span id="paynowWaitText">Waiting for your transfer…</span>
+                            </div>
+                            <div class="paynow-timer" id="paynowTimer"></div>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn-pay mt-2" id="payBtn">Pay $0.00</button>
-                    <p class="lock-note text-center mt-2">&#128274; Simulated checkout for demonstration.</p>
+                    <!-- Card -->
+                    <div class="pay-panel" id="panel-card">
+                        <div class="mb-3" id="f-card">
+                            <label class="form-label" for="card">Card number</label>
+                            <div class="card-input-wrap">
+                                <input type="text" inputmode="numeric" class="form-control" id="card" placeholder="1234 5678 9012 3456" autocomplete="cc-number" maxlength="23">
+                                <span class="card-brand-mark" id="cardBrandMark"></span>
+                            </div>
+                            <div class="invalid-msg" id="cardMsg">Enter a valid card number.</div>
+                            <div class="accepted-brands">
+                                <span>VISA</span><span>MASTERCARD</span><span>AMEX</span><span>UNIONPAY</span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-6 mb-3" id="f-exp">
+                                <label class="form-label" for="expiry">Expiry</label>
+                                <input type="text" inputmode="numeric" class="form-control" id="expiry" placeholder="MM/YY" autocomplete="cc-exp" maxlength="5">
+                                <div class="invalid-msg">Use MM/YY, in the future.</div>
+                            </div>
+                            <div class="col-6 mb-3" id="f-cvv">
+                                <label class="form-label" for="cvv"><span id="cvvLabel">CVV</span></label>
+                                <input type="text" inputmode="numeric" class="form-control" id="cvv" placeholder="123" autocomplete="cc-csc" maxlength="4">
+                                <div class="invalid-msg" id="cvvMsg">3 digits.</div>
+                            </div>
+                        </div>
+
+                        <div class="demo-hint">
+                            Sandbox cards — <strong>4242 4242 4242 4242</strong> approves.
+                            <strong>4000 0000 0000 9995</strong> returns insufficient funds,
+                            <strong>4000 0000 0000 0002</strong> is declined by the issuer.
+                            Any future expiry and a valid-length CVV.
+                        </div>
+                    </div>
+
+                    <!-- Pay at stall -->
+                    <div class="pay-panel" id="panel-counter">
+                        <div class="counter-note">
+                            <strong>Order now, pay when you collect.</strong><br>
+                            Your order goes straight to the stall and your queue number is issued
+                            immediately. Pay the stallholder by cash, card or PayNow when you pick
+                            it up — they'll mark it as settled.
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-pay mt-3" id="payBtn">Pay $0.00</button>
+                    <p class="lock-note text-center mt-2" id="lockNote">&#128274; Simulated checkout for demonstration.</p>
                 </form>
             </div>
         </div>
@@ -248,10 +382,11 @@
     <div class="success-wrap" id="successWrap">
         <div class="checkout-card mx-auto" style="max-width: 520px;">
             <div class="success-check">&check;</div>
-            <h3 class="fw-bold">Payment approved</h3>
+            <h3 class="fw-bold" id="successHeading">Payment approved</h3>
             <p class="success-sub mb-1">Thanks, <span id="successName">there</span> - your order is confirmed.</p>
             <div class="order-id" id="successOrderId">FH-000000</div>
-            <p class="mb-4">Total paid: <strong id="successTotal">$0.00</strong></p>
+            <p class="mb-1">Total: <strong id="successTotal">$0.00</strong></p>
+            <p class="text-muted small mb-4" id="successPaymentDetail"></p>
             <p class="text-muted small">Taking you to your order status...</p>
         </div>
     </div>
@@ -457,15 +592,22 @@
         setupOtp('signup', { requireName: true });
     })();
 
-    // ---- Order summary + payment ----
+    // ---- Order summary ----
     const summaryLines = document.getElementById('summaryLines');
     const summaryTotal = document.getElementById('summaryTotal');
     const payBtn = document.getElementById('payBtn');
     const payForm = document.getElementById('payForm');
     const payAlert = document.getElementById('payAlert');
+    const lockNote = document.getElementById('lockNote');
+
     const cardInput = document.getElementById('card');
     const expInput = document.getElementById('expiry');
     const cvvInput = document.getElementById('cvv');
+    const cardBrandMark = document.getElementById('cardBrandMark');
+    const cvvLabel = document.getElementById('cvvLabel');
+    const cvvMsg = document.getElementById('cvvMsg');
+
+    let selectedMethod = 'paynow';
 
     function renderSummary() {
         const cart = getCart();
@@ -485,28 +627,107 @@
                 </div>`;
         });
         summaryLines.innerHTML = html;
-        const total = cartTotal();
-        summaryTotal.textContent = formatPrice(total);
+        summaryTotal.textContent = formatPrice(cartTotal());
         payBtn.disabled = false;
-        payBtn.textContent = 'Pay ' + formatPrice(total);
+        updatePayButton();
+    }
+
+    // Prices shown here are indicative only — the server re-prices the whole
+    // cart from the database before charging anything.
+    function updatePayButton() {
+        const total = formatPrice(cartTotal());
+        if (selectedMethod === 'paynow') {
+            payBtn.textContent = paynow.reference ? 'Waiting for PayNow…' : 'Generate PayNow QR · ' + total;
+            payBtn.disabled = getCart().length === 0 || !!paynow.reference;
+        } else if (selectedMethod === 'counter') {
+            payBtn.textContent = 'Place order · ' + total;
+            payBtn.disabled = getCart().length === 0;
+        } else {
+            payBtn.textContent = 'Pay ' + total;
+            payBtn.disabled = getCart().length === 0;
+        }
+    }
+
+    // ---- Payment method switching ----
+    document.querySelectorAll('.pay-method').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const method = btn.dataset.method;
+            if (method === selectedMethod) return;
+
+            selectedMethod = method;
+            document.querySelectorAll('.pay-method').forEach(b => b.classList.toggle('active', b === btn));
+            document.querySelectorAll('.pay-panel').forEach(p => {
+                p.classList.toggle('active', p.id === 'panel-' + method);
+            });
+
+            resetPayNow();
+            payAlert.style.display = 'none';
+            lockNote.textContent = method === 'counter'
+                ? '🏪 No payment is taken now — settle with the stall on collection.'
+                : '🔒 Simulated checkout for demonstration.';
+            updatePayButton();
+        });
+    });
+
+    // ---- Card: brand detection mirrors the server's rules ----
+    const CARD_BRANDS = [
+        { brand: 'amex',       label: 'AMEX',       pattern: /^3[47]/,           lengths: [15],             cvv: 4, cvvName: 'CID', gaps: [4, 10] },
+        { brand: 'visa',       label: 'VISA',       pattern: /^4/,               lengths: [16, 19],         cvv: 3, cvvName: 'CVV', gaps: [4, 8, 12, 16] },
+        { brand: 'mastercard', label: 'MASTERCARD', pattern: /^(5[1-5]|2[2-7])/, lengths: [16],             cvv: 3, cvvName: 'CVC', gaps: [4, 8, 12] },
+        { brand: 'unionpay',   label: 'UNIONPAY',   pattern: /^62/,              lengths: [16, 17, 18, 19], cvv: 3, cvvName: 'CVN', gaps: [4, 8, 12, 16] }
+    ];
+
+    function detectBrand(digits) {
+        return CARD_BRANDS.find(b => b.pattern.test(digits)) || null;
+    }
+
+    function groupCardDigits(digits, brand) {
+        const gaps = brand ? brand.gaps : [4, 8, 12, 16];
+        let out = '';
+        for (let i = 0; i < digits.length; i++) {
+            if (i > 0 && gaps.includes(i)) out += ' ';
+            out += digits[i];
+        }
+        return out;
     }
 
     cardInput.addEventListener('input', () => {
-        const digits = cardInput.value.replace(/\D/g, '').slice(0, 19);
-        cardInput.value = digits.replace(/(.{4})/g, '$1 ').trim();
+        const brandBefore = detectBrand(cardInput.value.replace(/\D/g, ''));
+        const maxLen = brandBefore ? Math.max(...brandBefore.lengths) : 19;
+        const digits = cardInput.value.replace(/\D/g, '').slice(0, maxLen);
+        const brand = detectBrand(digits);
+
+        cardInput.value = groupCardDigits(digits, brand);
+
+        if (brand) {
+            cardBrandMark.textContent = brand.label;
+            cardBrandMark.classList.add('show');
+            cvvLabel.textContent = brand.cvvName;
+            cvvInput.maxLength = brand.cvv;
+            cvvInput.placeholder = brand.cvv === 4 ? '1234' : '123';
+            cvvMsg.textContent = brand.cvv + ' digits.';
+            if (cvvInput.value.length > brand.cvv) cvvInput.value = cvvInput.value.slice(0, brand.cvv);
+        } else {
+            cardBrandMark.classList.remove('show');
+            cvvLabel.textContent = 'CVV';
+            cvvInput.maxLength = 4;
+            cvvMsg.textContent = '3 digits.';
+        }
     });
+
     expInput.addEventListener('input', () => {
         let digits = expInput.value.replace(/\D/g, '').slice(0, 4);
         if (digits.length >= 3) digits = digits.slice(0, 2) + '/' + digits.slice(2);
         expInput.value = digits;
     });
+
     cvvInput.addEventListener('input', () => {
-        cvvInput.value = cvvInput.value.replace(/\D/g, '').slice(0, 4);
+        cvvInput.value = cvvInput.value.replace(/\D/g, '').slice(0, cvvInput.maxLength || 4);
     });
 
     function luhnValid(number) {
-        const digits = number.replace(/\s+/g, '');
-        if (!/^\d{13,19}$/.test(digits)) return false;
+        const digits = number.replace(/\D/g, '');
+        if (!/^\d{12,19}$/.test(digits)) return false;
         let sum = 0;
         let double = false;
         for (let i = digits.length - 1; i >= 0; i--) {
@@ -524,25 +745,31 @@
         const month = Number(match[1]);
         const year = 2000 + Number(match[2]);
         if (month < 1 || month > 12) return false;
-        const firstOfNextMonth = new Date(year, month, 1);
-        return firstOfNextMonth > new Date();
+        return new Date(year, month, 1) > new Date();
     }
 
     function setError(fieldId, hasError) {
         document.getElementById(fieldId).classList.toggle('field-error', hasError);
     }
 
+    // Validates the contact fields plus whatever the chosen method needs.
+    // The server repeats all of this — this is only to save a round trip.
     function validateForm() {
         const name = document.getElementById('name').value.trim();
         const email = document.getElementById('email').value.trim();
 
         const checks = {
             'f-name': name.length > 0,
-            'f-email': /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email),
-            'f-card': luhnValid(cardInput.value),
-            'f-exp': expiryValid(expInput.value),
-            'f-cvv': /^\d{3,4}$/.test(cvvInput.value)
+            'f-email': /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
         };
+
+        if (selectedMethod === 'card') {
+            const digits = cardInput.value.replace(/\D/g, '');
+            const brand = detectBrand(digits);
+            checks['f-card'] = !!brand && brand.lengths.includes(digits.length) && luhnValid(digits);
+            checks['f-exp'] = expiryValid(expInput.value);
+            checks['f-cvv'] = new RegExp('^\\d{' + (brand ? brand.cvv : 3) + '}$').test(cvvInput.value);
+        }
 
         let valid = true;
         for (const fieldId in checks) {
@@ -551,7 +778,161 @@
         }
         if (!valid) return null;
 
-        return { name: name, email: email, card: cardInput.value, exp: expInput.value, cvv: cvvInput.value };
+        return { name: name, email: email };
+    }
+
+    // ---- PayNow ----
+    const paynow = { reference: null, poll: null, countdown: null, settled: false };
+
+    function resetPayNow() {
+        clearInterval(paynow.poll);
+        clearInterval(paynow.countdown);
+        paynow.reference = null;
+        paynow.settled = false;
+        document.getElementById('paynowIdle').style.display = '';
+        document.getElementById('paynowLive').style.display = 'none';
+    }
+
+    function startPayNow(contact) {
+        payBtn.disabled = true;
+        payBtn.textContent = 'Generating QR…';
+
+        fetch('/api/payments/paynow', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ items: getCart() })
+        })
+        .then(r => r.json())
+        .then(result => {
+            if (!result.success) {
+                showError(result.message || 'Could not start the PayNow payment.');
+                updatePayButton();
+                return;
+            }
+
+            paynow.reference = result.reference;
+            document.getElementById('paynowIdle').style.display = 'none';
+            document.getElementById('paynowLive').style.display = '';
+            document.getElementById('paynowQr').src = result.qr;
+            document.getElementById('paynowAmount').textContent = formatPrice(result.amount);
+            document.getElementById('paynowRef').textContent = 'Ref ' + result.reference;
+
+            startCountdown(result.expiresAt);
+            pollPayNow(contact);
+            updatePayButton();
+        })
+        .catch(() => {
+            showError('Could not reach the server. Please try again.');
+            updatePayButton();
+        });
+    }
+
+    function startCountdown(expiresAt) {
+        const timer = document.getElementById('paynowTimer');
+        clearInterval(paynow.countdown);
+        paynow.countdown = setInterval(() => {
+            const left = Math.max(0, Math.round((expiresAt - Date.now()) / 1000));
+            const mm = String(Math.floor(left / 60)).padStart(2, '0');
+            const ss = String(left % 60).padStart(2, '0');
+            timer.textContent = left > 0 ? `QR expires in ${mm}:${ss}` : 'This QR has expired.';
+            if (left <= 0) clearInterval(paynow.countdown);
+        }, 250);
+    }
+
+    // Polls the way a real terminal waits for the bank's confirmation push.
+    function pollPayNow(contact) {
+        clearInterval(paynow.poll);
+        paynow.poll = setInterval(() => {
+            fetch('/api/payments/paynow/' + paynow.reference)
+                .then(r => r.json())
+                .then(result => {
+                    if (!result.success) return;
+
+                    if (result.status === 'succeeded' && !paynow.settled) {
+                        paynow.settled = true;
+                        clearInterval(paynow.poll);
+                        clearInterval(paynow.countdown);
+                        document.getElementById('paynowWait').innerHTML =
+                            '<span class="paynow-settled">✓ Transfer received — placing your order…</span>';
+                        document.getElementById('paynowTimer').textContent = '';
+                        submitOrder(contact, { method: 'paynow', paymentReference: paynow.reference });
+                    } else if (result.status === 'expired') {
+                        clearInterval(paynow.poll);
+                        document.getElementById('paynowWait').innerHTML =
+                            '<span class="text-muted">This QR expired before payment arrived.</span>';
+                        resetPayNow();
+                        showError('The PayNow QR expired. Please generate a new one.');
+                        updatePayButton();
+                    }
+                })
+                .catch(() => { /* transient — the next tick retries */ });
+        }, 1200);
+    }
+
+    function showError(message) {
+        payAlert.textContent = message;
+        payAlert.style.display = 'block';
+    }
+
+    // ---- Order submission ----
+    function submitOrder(contact, payment) {
+        const cart = getCart();
+        if (cart.length === 0) return;
+
+        payBtn.disabled = true;
+        const previousLabel = payBtn.textContent;
+        payBtn.textContent = 'Processing…';
+
+        fetch('/pay', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                items: cart,
+                customer: { name: contact.name, email: contact.email },
+                ...payment
+            })
+        })
+        .then(response => response.json())
+        .then(result => {
+            if (result.success) {
+                clearCart();
+                const orders = result.orders || [];
+                document.getElementById('checkoutMain').style.display = 'none';
+                document.getElementById('successName').textContent = result.name || 'there';
+                document.getElementById('successOrderId').textContent = orders.map(o => o.orderId).join(', ');
+                document.getElementById('successTotal').textContent = formatPrice(result.total);
+
+                const heading = document.getElementById('successHeading');
+                const detail = document.getElementById('successPaymentDetail');
+                if (result.paymentStatus === 'unpaid') {
+                    heading.textContent = 'Order confirmed';
+                    detail.textContent = 'Pay the stall when you collect.';
+                } else {
+                    heading.textContent = 'Payment approved';
+                    detail.textContent = 'Paid with ' + (result.paymentDetail || 'card') + '.';
+                }
+
+                document.getElementById('successWrap').style.display = 'block';
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                setTimeout(() => {
+                    window.location.href = orders.length === 1 ? '/track/' + orders[0].orderId : '/orders';
+                }, 1600);
+            } else {
+                showError(result.message || 'Payment failed. Please try again.');
+                resetPayNow();
+                updatePayButton();
+                payBtn.textContent = previousLabel;
+                if (result.message && result.message.toLowerCase().includes('log in')) {
+                    isLoggedIn = false;
+                    document.getElementById('loginBanner').style.display = 'flex';
+                }
+            }
+        })
+        .catch(() => {
+            showError('Could not reach the server. Please try again.');
+            resetPayNow();
+            updatePayButton();
+        });
     }
 
     payForm.addEventListener('submit', event => {
@@ -559,63 +940,23 @@
         payAlert.style.display = 'none';
 
         if (!isLoggedIn) {
-            const inst = bootstrap.Modal.getOrCreateInstance(document.getElementById('loginModal'));
-            inst.show();
+            bootstrap.Modal.getOrCreateInstance(document.getElementById('loginModal')).show();
             return;
         }
 
-        const data = validateForm();
-        if (!data) return;
+        const contact = validateForm();
+        if (!contact) return;
 
-        const cart = getCart();
-        if (cart.length === 0) return;
-
-        payBtn.disabled = true;
-        const label = payBtn.textContent;
-        payBtn.textContent = 'Processing...';
-
-        setTimeout(() => {
-            fetch('/pay', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    items: cart,
-                    customer: { name: data.name, email: data.email },
-                    card: { number: data.card, expiry: data.exp, cvv: data.cvv }
-                })
-            })
-            .then(response => response.json())
-            .then(result => {
-                if (result.success) {
-                    clearCart();
-                    const orders = result.orders || [];
-                    document.getElementById('checkoutMain').style.display = 'none';
-                    document.getElementById('successName').textContent = result.name || 'there';
-                    document.getElementById('successOrderId').textContent = orders.map(o => o.orderId).join(', ');
-                    document.getElementById('successTotal').textContent = formatPrice(result.total);
-                    document.getElementById('successWrap').style.display = 'block';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    setTimeout(() => {
-                        window.location.href = orders.length === 1 ? '/track/' + orders[0].orderId : '/orders';
-                    }, 1500);
-                } else {
-                    payAlert.textContent = result.message || 'Payment failed. Please try again.';
-                    payAlert.style.display = 'block';
-                    payBtn.disabled = false;
-                    payBtn.textContent = label;
-                    if (result.message && result.message.toLowerCase().includes('log in')) {
-                        isLoggedIn = false;
-                        document.getElementById('loginBanner').style.display = 'flex';
-                    }
-                }
-            })
-            .catch(() => {
-                payAlert.textContent = 'Could not reach the server. Please try again.';
-                payAlert.style.display = 'block';
-                payBtn.disabled = false;
-                payBtn.textContent = label;
+        if (selectedMethod === 'paynow') {
+            startPayNow(contact);
+        } else if (selectedMethod === 'card') {
+            submitOrder(contact, {
+                method: 'card',
+                card: { number: cardInput.value, expiry: expInput.value, cvv: cvvInput.value }
             });
-        }, 1200);
+        } else {
+            submitOrder(contact, { method: 'counter' });
+        }
     });
 
     renderSummary();

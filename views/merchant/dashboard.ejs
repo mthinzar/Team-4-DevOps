@@ -115,7 +115,7 @@
                                     <%= order.items.map(i => `${i.name} x${i.qty}`).join(', ') %>
                                 </td>
                                 <td>$<%= order.total.toFixed(2) %></td>
-                                <td><span class="badge-status status-<%= order.status %>"><%= order.status %></span></td>
+                                <td><span class="badge-status status-<%= order.status %>"><%= ORDER_STATUS_LABELS[order.status] || order.status %></span></td>
                                 <td class="text-muted small"><%= new Date(order.createdAt).toLocaleString() %></td>
                             </tr>
                         <% }) %>

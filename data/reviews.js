@@ -6,21 +6,32 @@
 
 const { getDB } = require('../db');
 
+// Internal ids (userId, the Mongo _id) are deliberately projected out — this
+// feeds a public endpoint and only the display fields belong on the wire.
 async function getReviewsForFood(foodId) {
     const db = getDB();
     return db.collection('reviews')
-        .find({ foodId })
+        .find({ foodId }, { projection: { _id: 0, userId: 0 } })
         .sort({ createdAt: -1 })
         .toArray();
 }
 
-async function addReview(foodId, { userId, userName, rating, comment }) {
+async function addReview(foodId, { userId, userName, rating, comment, orderId }) {
     const db = getDB();
+
+    // Callers validate the rating; anything that still isn't a whole 1-5 is a
+    // bug rather than a 5-star review, so fail loudly instead of defaulting.
+    const parsed = Number(rating);
+    if (!Number.isInteger(parsed) || parsed < 1 || parsed > 5) {
+        throw new Error(`addReview: invalid rating ${JSON.stringify(rating)}`);
+    }
+
     const review = {
         foodId,
         userId,
+        orderId: orderId || null,   // ties the review to the collected order
         userName: userName || 'Anonymous',
-        rating: Math.min(5, Math.max(1, parseInt(rating, 10) || 5)),
+        rating: parsed,
         comment: comment ? String(comment).trim().slice(0, 500) : '',
         createdAt: new Date()
     };

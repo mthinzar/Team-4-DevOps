@@ -81,6 +81,52 @@
         }
         .btn-track:hover { background: var(--pink-soft); color: var(--brand); }
 
+        /* ---- Rate your dishes (collected orders only) ---- */
+        .review-block {
+            margin-top: 1rem;
+            border-top: 1px dashed #f0d0d4;
+            padding-top: 1rem;
+        }
+        .review-block-title { font-weight: 600; font-size: 0.92rem; margin-bottom: 0.75rem; }
+        .review-row {
+            display: flex;
+            gap: 0.85rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #f7ecee;
+        }
+        .review-row:last-child { border-bottom: none; }
+        .review-row img {
+            width: 54px; height: 54px; object-fit: cover;
+            border-radius: 10px; flex-shrink: 0; background: var(--pink-soft);
+        }
+        .review-row .rr-body { flex-grow: 1; min-width: 0; }
+        .review-row .rr-name { font-weight: 600; font-size: 0.9rem; margin-bottom: 0.2rem; }
+
+        .star-picker { display: inline-flex; gap: 0.15rem; cursor: pointer; user-select: none; }
+        .star-picker .star {
+            font-size: 1.25rem; line-height: 1; color: #dcdcdc; transition: color 0.12s;
+        }
+        .star-picker .star.on { color: #f5a623; }
+
+        .rr-comment {
+            width: 100%; margin-top: 0.5rem; border: 1px solid #f0d0d4;
+            border-radius: 9px; padding: 0.45rem 0.65rem; font-size: 0.84rem;
+            font-family: inherit; resize: vertical; min-height: 42px;
+        }
+        .rr-comment:focus { outline: none; border-color: var(--brand); }
+
+        .rr-actions { display: flex; align-items: center; gap: 0.6rem; margin-top: 0.45rem; }
+        .btn-save-review {
+            background: var(--brand); color: #fff; border: none; border-radius: 8px;
+            padding: 0.35rem 0.9rem; font-weight: 600; font-size: 0.8rem;
+        }
+        .btn-save-review:hover:not(:disabled) { background: var(--brand-dark); }
+        .btn-save-review:disabled { opacity: 0.55; }
+        .rr-status { font-size: 0.78rem; }
+        .rr-status.ok { color: #198754; }
+        .rr-status.err { color: var(--brand); }
+        .rr-existing { font-size: 0.72rem; color: #7a7a7a; }
+
         /* Footer */
         footer { background: #1a1a1a; color: #ddd; }
         footer a { color: #ddd; text-decoration: none; }
@@ -157,6 +203,53 @@
                     <% } %>
                     <button type="button" class="btn-reorder" onclick='reorderOrder(<%- JSON.stringify(order.items) %>)'>Reorder</button>
                 </div>
+
+                <%
+                    // Rating is only offered once an order has actually been collected —
+                    // the same rule the server enforces on POST.
+                    const reviewable = isDone && !isCancelled
+                        ? order.items.filter(item => item.foodId)
+                        : [];
+                %>
+                <% if (reviewable.length > 0) { %>
+                    <div class="review-block">
+                        <div class="review-block-title">⭐ Rate your dishes</div>
+
+                        <% reviewable.forEach(item => {
+                            const existing = reviewByFood[item.foodId] || null;
+                        %>
+                            <div class="review-row" data-foodid="<%= item.foodId %>">
+                                <% if (item.image) { %>
+                                    <img src="<%= item.image %>" alt="<%= item.name %>">
+                                <% } %>
+                                <div class="rr-body">
+                                    <div class="rr-name">
+                                        <%= item.name %>
+                                        <% if (existing) { %>
+                                            <span class="rr-existing">— you rated this <%= existing.rating %>/5</span>
+                                        <% } %>
+                                    </div>
+
+                                    <div class="star-picker" data-rating="<%= existing ? existing.rating : 0 %>">
+                                        <% for (let s = 1; s <= 5; s++) { %>
+                                            <span class="star <%= existing && existing.rating >= s ? 'on' : '' %>" data-value="<%= s %>">★</span>
+                                        <% } %>
+                                    </div>
+
+                                    <textarea class="rr-comment" rows="1" maxlength="500"
+                                              placeholder="Anything you'd tell another student about this dish? (optional)"><%= existing ? existing.comment : '' %></textarea>
+
+                                    <div class="rr-actions">
+                                        <button type="button" class="btn-save-review">
+                                            <%= existing ? 'Update review' : 'Post review' %>
+                                        </button>
+                                        <span class="rr-status"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                <% } %>
             </div>
         <% }) %>
     <% } %>
@@ -171,6 +264,73 @@
         reorderItems(items);
         window.location.href = '/checkout';
     }
+
+    // ---- Rate your dishes ----
+
+    function paintStars(picker, value) {
+        picker.querySelectorAll('.star').forEach(star => {
+            star.classList.toggle('on', Number(star.dataset.value) <= value);
+        });
+    }
+
+    document.querySelectorAll('.star-picker').forEach(picker => {
+        // Preview on hover, commit on click.
+        picker.addEventListener('mouseover', event => {
+            const star = event.target.closest('.star');
+            if (star) paintStars(picker, Number(star.dataset.value));
+        });
+        picker.addEventListener('mouseleave', () => {
+            paintStars(picker, Number(picker.dataset.rating) || 0);
+        });
+        picker.addEventListener('click', event => {
+            const star = event.target.closest('.star');
+            if (!star) return;
+            picker.dataset.rating = star.dataset.value;
+            paintStars(picker, Number(star.dataset.value));
+        });
+    });
+
+    document.querySelectorAll('.btn-save-review').forEach(button => {
+        button.addEventListener('click', function () {
+            const row = this.closest('.review-row');
+            const picker = row.querySelector('.star-picker');
+            const status = row.querySelector('.rr-status');
+            const rating = Number(picker.dataset.rating) || 0;
+
+            if (rating < 1) {
+                status.className = 'rr-status err';
+                status.textContent = 'Pick a star rating first.';
+                return;
+            }
+
+            this.disabled = true;
+            status.className = 'rr-status';
+            status.textContent = 'Saving…';
+
+            fetch(`/api/foods/${row.dataset.foodid}/reviews`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ rating: rating, comment: row.querySelector('.rr-comment').value })
+            })
+            .then(response => response.json())
+            .then(result => {
+                this.disabled = false;
+                if (!result.success) {
+                    status.className = 'rr-status err';
+                    status.textContent = result.message || 'Could not save your review.';
+                    return;
+                }
+                status.className = 'rr-status ok';
+                status.textContent = '✓ Thanks for rating!';
+                this.textContent = 'Update review';
+            })
+            .catch(() => {
+                this.disabled = false;
+                status.className = 'rr-status err';
+                status.textContent = 'Could not reach the server.';
+            });
+        });
+    });
 </script>
 
 </body>
