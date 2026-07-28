@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Account Status - FoodHub Merchant</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <%- include('../partials/merchant-styles') %>
+    <style>
+        .pending-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+        .pending-card { max-width: 460px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="pending-wrap">
+    <div class="m-card pending-card">
+        <h3 class="fw-bold mb-2">
+            <% if (status === 'pending') { %>Application Under Review<% } else if (status === 'rejected') { %>Application Not Approved<% } else { %>Account Suspended<% } %>
+        </h3>
+        <p class="text-muted"><%= message %></p>
+        <button type="button" class="btn-brand-outline mt-2" id="merchantPendingLogoutBtn">Logout</button>
+    </div>
+</div>
+
+<script>
+    document.getElementById('merchantPendingLogoutBtn').addEventListener('click', () => {
+        fetch('/merchant/logout', { method: 'POST' }).then(() => { window.location.href = '/'; });
+    });
+</script>
+
+</body>
+</html>

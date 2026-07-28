@@ -1,0 +1,102 @@
+<style>
+    :root {
+        --a-ink: #eef1f6;
+        --a-bg: #10131a;
+        --a-panel: #171b26;
+        --a-border: #262c3b;
+        --a-accent: #f5a623;
+        --a-accent-dark: #d68d0f;
+        --a-muted: #8b93a7;
+    }
+    body.admin-body {
+        font-family: 'Poppins', sans-serif;
+        background-color: var(--a-bg);
+        color: var(--a-ink);
+    }
+    .a-accent { color: var(--a-accent); }
+
+    /* Admin nav */
+    .a-navbar { background: var(--a-panel); border-bottom: 1px solid var(--a-border); }
+    .a-navbar .navbar-brand { color: var(--a-ink) !important; }
+    .a-navbar .navbar-brand img { height: 40px; }
+    .a-nav-link {
+        color: var(--a-muted);
+        font-weight: 500;
+        text-decoration: none;
+        padding: 0.5rem 0.9rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+    }
+    .a-nav-link:hover { background: #1f2433; color: var(--a-ink); }
+    .a-nav-link.active { background: var(--a-accent); color: #1a1200; }
+
+    .a-card { background: var(--a-panel); border: 1px solid var(--a-border); border-radius: 16px; padding: 1.5rem; }
+    .a-page-title { font-weight: 800; font-size: clamp(1.5rem, 3vw, 2.1rem); color: var(--a-ink); }
+    .a-page-sub { color: var(--a-muted); font-size: 0.92rem; }
+
+    .a-stat-card { background: var(--a-panel); border: 1px solid var(--a-border); border-radius: 16px; padding: 1.25rem 1.4rem; height: 100%; }
+    .a-stat-card .label { font-size: 0.78rem; color: var(--a-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+    .a-stat-card .value { font-size: 1.6rem; font-weight: 800; margin-top: 0.25rem; color: var(--a-ink); }
+    .a-stat-card .icon { font-size: 1.3rem; }
+
+    .btn-admin { background: var(--a-accent); color: #1a1200; border: none; border-radius: 10px; padding: 0.6rem 1.2rem; font-weight: 700; }
+    .btn-admin:hover { background: var(--a-accent-dark); color: #1a1200; }
+    .btn-admin-outline { background: transparent; color: var(--a-accent); border: 1px solid var(--a-accent); border-radius: 10px; padding: 0.55rem 1.1rem; font-weight: 600; }
+    .btn-admin-outline:hover { background: rgba(245,166,35,0.12); color: var(--a-accent); }
+    .btn-danger-outline { background: transparent; color: #f07171; border: 1px solid #f07171; border-radius: 10px; padding: 0.45rem 0.9rem; font-weight: 600; font-size: 0.85rem; }
+    .btn-danger-outline:hover { background: rgba(240,113,113,0.12); color: #f07171; }
+
+    .a-badge { font-size: 0.72rem; font-weight: 700; border-radius: 999px; padding: 0.28rem 0.75rem; text-transform: capitalize; display: inline-block; }
+    .a-badge.status-pending { background: #4a3b12; color: #f5c96a; }
+    .a-badge.status-approved { background: #123b26; color: #4ade80; }
+    .a-badge.status-rejected,
+    .a-badge.status-cancelled { background: #4a1414; color: #f28b8b; }
+    .a-badge.status-suspended { background: #3a2a1a; color: #f0a35c; }
+    .a-badge.status-pending-order,
+    .a-badge.status-accepted { background: #1a2c4a; color: #7fb2f0; }
+    .a-badge.status-preparing { background: #3a2050; color: #d59df0; }
+    .a-badge.status-ready { background: #123b26; color: #4ade80; }
+    .a-badge.status-completed,
+    .a-badge.status-collected { background: #2a2e3d; color: var(--a-muted); }
+
+    /* Bootstrap's own .table rules read color/background from these CSS
+       variables with higher specificity than a plain class selector can
+       beat, so they must be overridden here rather than via `color:` alone
+       -- otherwise Bootstrap's dark default table text stays nearly
+       invisible against this dark theme. */
+    .a-table {
+        --bs-table-color: var(--a-ink);
+        --bs-table-bg: transparent;
+        --bs-table-border-color: var(--a-border);
+        --bs-table-striped-color: var(--a-ink);
+        --bs-table-striped-bg: rgba(255,255,255,0.03);
+        --bs-table-hover-color: var(--a-ink);
+        --bs-table-hover-bg: rgba(255,255,255,0.04);
+        color: var(--a-ink);
+    }
+    .a-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.4px; color: var(--a-muted); font-weight: 700; border-bottom: 2px solid var(--a-border); background: transparent; }
+    .a-table td { vertical-align: middle; font-size: 0.88rem; }
+
+    .a-empty { text-align: center; color: var(--a-muted); padding: 3rem 1rem; }
+
+    .form-label { font-weight: 600; font-size: 0.85rem; color: var(--a-ink); }
+    .a-card .form-control, .a-card .form-select,
+    .modal .form-control, .modal .form-select {
+        border-radius: 10px; padding: 0.55rem 0.85rem;
+        background: #10131a; border: 1px solid var(--a-border); color: var(--a-ink);
+    }
+    .a-card .form-control:focus, .a-card .form-select:focus,
+    .modal .form-control:focus, .modal .form-select:focus {
+        border-color: var(--a-accent); box-shadow: 0 0 0 0.2rem rgba(245,166,35,0.15);
+        background: #10131a; color: var(--a-ink);
+    }
+    .modal-content { background: var(--a-panel); color: var(--a-ink); border: 1px solid var(--a-border); }
+    .modal-header, .modal-footer { border-color: var(--a-border); }
+    .btn-close { filter: invert(1); }
+
+    .filter-pill {
+        border: 1px solid var(--a-accent); color: var(--a-accent); background: transparent;
+        border-radius: 30px; padding: 0.3rem 0.9rem; font-size: 0.82rem; font-weight: 600;
+    }
+    .filter-pill.active { background: var(--a-accent); color: #1a1200; }
+</style>

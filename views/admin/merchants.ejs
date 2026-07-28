@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Merchants - FoodHub Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <%- include('../partials/admin-styles') %>
+    <style>
+        .merchant-card { background: var(--a-panel); border: 1px solid var(--a-border); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 1rem; }
+        .store-thumb { width: 46px; height: 46px; border-radius: 10px; object-fit: cover; }
+        .open-dot { font-size: 0.7rem; }
+        .open-dot.is-open { color: #4ade80; }
+        .open-dot.is-closed { color: #f28b8b; }
+    </style>
+</head>
+<body class="admin-body">
+
+<%- include('../partials/admin-nav', { activePage: 'merchants' }) %>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <div>
+            <h1 class="a-page-title mb-1">Manage Merchants</h1>
+            <p class="a-page-sub mb-0">Approve, edit, suspend or remove merchant accounts.</p>
+        </div>
+        <button type="button" class="btn-admin" data-bs-toggle="modal" data-bs-target="#addMerchantModal">+ Add New Merchant</button>
+    </div>
+
+    <div class="d-flex flex-wrap gap-2 mb-3" id="statusFilters">
+        <button class="filter-pill active" data-filter="all">All (<%= merchants.length %>)</button>
+        <% ['pending','approved','rejected','suspended'].forEach(s => { %>
+            <button class="filter-pill" data-filter="<%= s %>"><%= s.charAt(0).toUpperCase() + s.slice(1) %></button>
+        <% }) %>
+    </div>
+
+    <% if (merchants.length === 0) { %>
+        <div class="a-card a-empty">No merchant accounts yet.</div>
+    <% } else { %>
+        <div id="merchantsList">
+            <% merchants.forEach(m => { %>
+                <div class="merchant-card" data-status="<%= m.status %>">
+                    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <% if (m.stall) { %>
+                                <img src="<%= m.stall.image %>" alt="<%= m.stall.name %>" class="store-thumb" onerror="this.style.visibility='hidden';">
+                            <% } %>
+                            <div>
+                                <div class="fw-bold">
+                                    <%= m.stall ? m.stall.name : 'No store assigned' %>
+                                    <span class="a-badge status-<%= m.status %> ms-1"><%= m.status %></span>
+                                    <% if (m.stall) { %>
+                                        <span class="open-dot <%= m.stall.isOpen !== false ? 'is-open' : 'is-closed' %> ms-1">
+                                            &#9679; <%= m.stall.isOpen !== false ? 'Open' : 'Closed' %>
+                                        </span>
+                                    <% } %>
+                                </div>
+                                <div class="small" style="color: var(--a-muted);">
+                                    <%= m.email %> &middot; joined <%= new Date(m.createdAt).toLocaleDateString() %>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <% if (m.status === 'pending') { %>
+                                <button class="btn-admin btn-sm act-approve" data-id="<%= m._id %>">Approve</button>
+                                <button class="btn-danger-outline act-reject" data-id="<%= m._id %>">Reject</button>
+                            <% } %>
+                            <% if (m.status === 'approved' || m.status === 'suspended') { %>
+                                <button class="btn-admin-outline btn-sm act-suspend" data-id="<%= m._id %>">
+                                    <%= m.status === 'suspended' ? 'Reinstate' : 'Suspend' %>
+                                </button>
+                            <% } %>
+                            <% if (m.stall) { %>
+                                <button class="btn-admin-outline btn-sm act-edit" data-id="<%= m._id %>"
+                                        data-name="<%= m.stall.name %>" data-image="<%= m.stall.image %>">Edit Store</button>
+                            <% } %>
+                            <button class="btn-admin-outline btn-sm act-reset" data-id="<%= m._id %>">Reset Password</button>
+                            <button class="btn-danger-outline act-remove" data-id="<%= m._id %>">Remove</button>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        </div>
+    <% } %>
+</div>
+
+<!-- Add merchant modal -->
+<div class="modal fade" id="addMerchantModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Add New Merchant</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="addMerchantForm">
+                <div class="modal-body">
+                    <div class="alert alert-danger py-2 small" id="addMerchantError" style="display:none;"></div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-control" id="newMerchantEmail" required>
+                    </div>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" id="newMerchantPassword" required>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label">Confirm Password</label>
+                            <input type="password" class="form-control" id="newMerchantConfirmPassword" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Stall</label>
+                        <select class="form-select" id="newMerchantStallSelect">
+                            <option value="">Select a stall…</option>
+                            <% unclaimedStalls.forEach(s => { %>
+                                <option value="<%= s.id %>"><%= s.emoji %> <%= s.name %></option>
+                            <% }) %>
+                            <option value="__new__">+ Create a New Stall</option>
+                        </select>
+                    </div>
+                    <div id="newStallFields" style="display:none;">
+                        <div class="mb-3">
+                            <label class="form-label">New Stall Name</label>
+                            <input type="text" class="form-control" id="newStallName">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Stall Picture</label>
+                            <input type="file" class="form-control" id="newStallImage" accept="image/*">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-admin-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-admin" id="addMerchantBtn">Create Merchant</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit store modal -->
+<div class="modal fade" id="editStoreModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title fw-bold">Edit Store Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="editStoreForm">
+                <input type="hidden" id="editMerchantId">
+                <div class="modal-body">
+                    <div class="alert alert-danger py-2 small" id="editStoreError" style="display:none;"></div>
+                    <div class="text-center mb-3">
+                        <img id="editStorePreview" src="" alt="" style="width:100px;height:100px;border-radius:12px;object-fit:cover;">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Store Name</label>
+                        <input type="text" class="form-control" id="editStoreName" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Store Picture</label>
+                        <input type="file" class="form-control" id="editStoreImage" accept="image/*">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-admin-outline" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-admin">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ---- Status filter ----
+    document.querySelectorAll('#statusFilters .filter-pill').forEach(pill => {
+        pill.addEventListener('click', () => {
+            document.querySelectorAll('#statusFilters .filter-pill').forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const filter = pill.dataset.filter;
+            document.querySelectorAll('.merchant-card').forEach(card => {
+                card.style.display = (filter === 'all' || card.dataset.status === filter) ? '' : 'none';
+            });
+        });
+    });
+
+    // ---- Approve / Reject / Suspend / Remove ----
+    function postAction(url, onSuccess) {
+        fetch(url, { method: 'POST' })
+            .then(r => r.json())
+            .then(result => {
+                if (!result.success) { alert(result.message || 'Action failed.'); return; }
+                onSuccess(result);
+            })
+            .catch(() => alert('Could not reach the server.'));
+    }
+
+    document.querySelectorAll('.act-approve').forEach(btn => btn.addEventListener('click', function () {
+        postAction(`/admin/merchants/${this.dataset.id}/approve`, () => window.location.reload());
+    }));
+    document.querySelectorAll('.act-reject').forEach(btn => btn.addEventListener('click', function () {
+        if (!confirm('Reject this merchant application?')) return;
+        postAction(`/admin/merchants/${this.dataset.id}/reject`, () => window.location.reload());
+    }));
+    document.querySelectorAll('.act-suspend').forEach(btn => btn.addEventListener('click', function () {
+        postAction(`/admin/merchants/${this.dataset.id}/suspend`, () => window.location.reload());
+    }));
+    document.querySelectorAll('.act-remove').forEach(btn => btn.addEventListener('click', function () {
+        if (!confirm('Remove this merchant? Their stall will become unclaimed and reassignable.')) return;
+        postAction(`/admin/merchants/${this.dataset.id}/remove`, () => window.location.reload());
+    }));
+    document.querySelectorAll('.act-reset').forEach(btn => btn.addEventListener('click', function () {
+        if (!confirm('Reset this merchant\'s password?')) return;
+        postAction(`/admin/merchants/${this.dataset.id}/reset-password`, (result) => {
+            alert('New temporary password: ' + result.tempPassword + '\n\nShare this with the merchant securely.');
+        });
+    }));
+
+    // ---- Add merchant modal ----
+    document.getElementById('newMerchantStallSelect').addEventListener('change', function () {
+        document.getElementById('newStallFields').style.display = this.value === '__new__' ? 'block' : 'none';
+    });
+
+    document.getElementById('addMerchantForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const errorEl = document.getElementById('addMerchantError');
+        errorEl.style.display = 'none';
+
+        const stallChoice = document.getElementById('newMerchantStallSelect').value;
+        if (!stallChoice) { errorEl.textContent = 'Choose a stall.'; errorEl.style.display = 'block'; return; }
+
+        const formData = new FormData();
+        formData.append('email', document.getElementById('newMerchantEmail').value.trim());
+        formData.append('password', document.getElementById('newMerchantPassword').value);
+        formData.append('confirmPassword', document.getElementById('newMerchantConfirmPassword').value);
+
+        if (stallChoice === '__new__') {
+            formData.append('stallMode', 'new');
+            formData.append('newStallName', document.getElementById('newStallName').value.trim());
+            const imageFile = document.getElementById('newStallImage').files[0];
+            if (imageFile) formData.append('stallImage', imageFile);
+        } else {
+            formData.append('stallMode', 'existing');
+            formData.append('stallId', stallChoice);
+        }
+
+        const btn = document.getElementById('addMerchantBtn');
+        btn.disabled = true;
+        btn.textContent = 'Creating...';
+
+        fetch('/admin/merchants/new', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(result => {
+                btn.disabled = false;
+                btn.textContent = 'Create Merchant';
+                if (!result.success) {
+                    errorEl.textContent = result.message || 'Could not create merchant.';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                window.location.reload();
+            })
+            .catch(() => {
+                btn.disabled = false;
+                btn.textContent = 'Create Merchant';
+                errorEl.textContent = 'Could not reach the server.';
+                errorEl.style.display = 'block';
+            });
+    });
+
+    // ---- Edit store modal ----
+    document.querySelectorAll('.act-edit').forEach(btn => btn.addEventListener('click', function () {
+        document.getElementById('editMerchantId').value = this.dataset.id;
+        document.getElementById('editStoreName').value = this.dataset.name;
+        document.getElementById('editStorePreview').src = this.dataset.image;
+        new bootstrap.Modal(document.getElementById('editStoreModal')).show();
+    }));
+
+    document.getElementById('editStoreImage').addEventListener('change', function () {
+        if (this.files && this.files[0]) {
+            document.getElementById('editStorePreview').src = URL.createObjectURL(this.files[0]);
+        }
+    });
+
+    document.getElementById('editStoreForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const errorEl = document.getElementById('editStoreError');
+        errorEl.style.display = 'none';
+
+        const id = document.getElementById('editMerchantId').value;
+        const formData = new FormData();
+        formData.append('name', document.getElementById('editStoreName').value.trim());
+        const imageFile = document.getElementById('editStoreImage').files[0];
+        if (imageFile) formData.append('image', imageFile);
+
+        fetch(`/admin/merchants/${id}/edit`, { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(result => {
+                if (!result.success) {
+                    errorEl.textContent = result.message || 'Could not update store.';
+                    errorEl.style.display = 'block';
+                    return;
+                }
+                window.location.reload();
+            })
+            .catch(() => {
+                errorEl.textContent = 'Could not reach the server.';
+                errorEl.style.display = 'block';
+            });
+    });
+</script>
+
+</body>
+</html>

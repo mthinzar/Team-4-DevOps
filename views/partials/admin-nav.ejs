@@ -1,0 +1,39 @@
+<nav class="navbar navbar-expand-lg a-navbar py-2">
+    <div class="container-fluid px-3 px-md-4">
+        <a class="navbar-brand fw-bold" href="/admin/dashboard">
+            <img src="/images/logo.png" alt="FoodHub"
+                 onerror="this.style.display='none';document.getElementById('aBrandText').style.display='inline';">
+            <span id="aBrandText" style="display:none;">food<span class="a-accent">hub</span></span>
+            <span class="badge ms-1" style="font-size:0.6rem; vertical-align: middle; background: var(--a-accent); color:#1a1200;">ADMIN</span>
+        </a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#adminNavCollapse">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="adminNavCollapse">
+            <div class="d-flex flex-wrap gap-1 flex-grow-1">
+                <a href="/admin/dashboard" class="a-nav-link <%= activePage === 'dashboard' ? 'active' : '' %>">Dashboard</a>
+                <a href="/admin/merchants" class="a-nav-link <%= activePage === 'merchants' ? 'active' : '' %>">Merchants</a>
+                <a href="/admin/orders" class="a-nav-link <%= activePage === 'orders' ? 'active' : '' %>">Orders</a>
+                <a href="/admin/stores" class="a-nav-link <%= activePage === 'stores' ? 'active' : '' %>">Store Sales</a>
+                <a href="/admin/reports" class="a-nav-link <%= activePage === 'reports' ? 'active' : '' %>">Reports</a>
+                <a href="/admin/reviews" class="a-nav-link <%= activePage === 'reviews' ? 'active' : '' %>">Reviews</a>
+                <a href="/admin/users" class="a-nav-link <%= activePage === 'users' ? 'active' : '' %>">Users</a>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mt-2 mt-lg-0">
+                <% if (typeof admin !== 'undefined' && admin) { %>
+                    <span class="small" style="color: var(--a-muted);"><%= admin.name %></span>
+                <% } %>
+                <button type="button" class="btn-admin-outline btn-sm" id="adminLogoutBtn">Logout</button>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<script>
+    document.getElementById('adminLogoutBtn').addEventListener('click', () => {
+        fetch('/admin/logout', { method: 'POST' }).then(() => { window.location.href = '/admin/login'; });
+    });
+</script>

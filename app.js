@@ -16,7 +16,11 @@ const {
     linkMerchantToStall,
     getUnclaimedStalls,
     claimExistingStall,
-    createAndClaimStall
+    createAndClaimStall,
+    listMerchantsWithStalls,
+    setMerchantStatus,
+    removeMerchant,
+    resetMerchantPassword
 } = require('./data/merchants');
 const { getDashboardStats, getStatsPageData } = require('./data/merchantStats');
 const { priceCart } = require('./data/pricing');
@@ -27,6 +31,8 @@ const {
     newPaymentReference
 } = require('./data/payments');
 const QRCode = require('qrcode');
+const { findAdminById, createAdmin, verifyAdminPassword, deleteAdmin } = require('./data/admins');
+const { getPlatformDashboardStats, getStoreSalesBreakdown, getReportsData, getStoreRatingBreakdown } = require('./data/adminStats');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,9 +48,11 @@ app.use(session({
     cookie: { maxAge: 1000 * 60 * 60 * 24 * 7 } // 1 week
 }));
 
+// make the logged-in user available to the EJS pages
 app.use((req, res, next) => {
     res.locals.user = req.session.user || null;
     res.locals.merchant = req.session.merchant || null;
+    res.locals.admin = req.session.admin || null;
     next();
 });
 
@@ -109,11 +117,14 @@ app.post('/auth/send-code', (req, res) => {
     }
 
     const code = String(Math.floor(100000 + Math.random() * 900000));
+
+    // demo security code. It is displayed on the website and is not sent through real SMS.
     pendingCodes.set(phone, { code, expiresAt: Date.now() + CODE_TTL_MS, name });
 
     res.json({ success: true, devCode: code });
 });
 
+// Verify code and create/login customer account. If the phone number is new, the user must provide a name
 app.post('/auth/verify', async (req, res) => {
     const phone = String(req.body.phone || '').replace(/\s+/g, '');
     const code = String(req.body.code || '').trim();
@@ -136,13 +147,18 @@ app.post('/auth/verify', async (req, res) => {
             if (!name && !pending.name) {
                 return res.status(400).json({ success: false, message: 'No account found for this number. Please sign up first.' });
             }
-            const newUser = { name: name || pending.name || 'Friend', phone, createdAt: new Date() };
+            const newUser = { name: name || pending.name || 'Friend', phone, disabled: false, createdAt: new Date() };
             const result = await db.collection('users').insertOne(newUser);
             user = { _id: result.insertedId, ...newUser };
         }
 
+        if (user.disabled) {
+            return res.status(403).json({ success: false, message: 'Your account has been disabled. Please contact support.' });
+        }
+
         req.session.user = { id: user._id.toString(), name: user.name, phone: user.phone };
         delete req.session.merchant; // one role at a time per browser session
+        delete req.session.admin;
         res.json({ success: true, name: user.name });
     } catch (err) {
         console.error(err);
@@ -160,14 +176,42 @@ app.post('/auth/logout', (req, res) => {
 // customer phone-OTP session above.
 // ------------------------------------------------------------------
 
-function requireMerchant(req, res, next) {
+function merchantStatusMessage(status) {
+    if (status === 'pending') return 'Your merchant application is still awaiting admin approval.';
+    if (status === 'rejected') return 'Your merchant application was not approved.';
+    if (status === 'suspended') return 'Your merchant account has been suspended.';
+    return 'Your merchant account is not currently active.';
+}
+
+// Re-checks approval status fresh from the database on every request
+// (rather than trusting the session) so an admin suspending a merchant
+// takes effect immediately, not just after their next login.
+async function requireMerchant(req, res, next) {
     if (!req.session.merchant) {
         if (req.path.startsWith('/api/') || req.method !== 'GET') {
             return res.status(401).json({ success: false, message: 'Please log in as a merchant.' });
         }
         return res.redirect('/');
     }
-    next();
+    try {
+        const db = getDB();
+        const merchant = await db.collection('merchants').findOne({ _id: new ObjectId(req.session.merchant.id) });
+        if (!merchant) {
+            delete req.session.merchant;
+            return res.redirect('/');
+        }
+        const status = merchant.status || 'approved';
+        if (status !== 'approved') {
+            if (req.path.startsWith('/api/') || req.method !== 'GET') {
+                return res.status(403).json({ success: false, message: merchantStatusMessage(status) });
+            }
+            return res.redirect('/merchant/pending');
+        }
+        next();
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Something went wrong.');
+    }
 }
 
 // Makes the merchant's own stall available to every merchant page view
@@ -215,24 +259,24 @@ app.post('/merchant/signup', handleUpload('stallImage'), async (req, res) => {
         }
 
         let stallId;
+        let merchant;
 
         if (stallMode === 'new') {
             const stallName = String(req.body.newStallName || '').trim();
             if (!stallName) {
                 return res.status(400).json({ success: false, message: 'Enter a name for your new stall.' });
             }
-            const merchant = await createMerchant({ email, password });
+            merchant = await createMerchant({ email, password });
             const image = req.file ? `/images/uploads/${req.file.filename}` : null;
             const stall = await createAndClaimStall({ name: stallName, image, merchantId: merchant._id });
             await linkMerchantToStall(merchant._id, stall.id);
             stallId = stall.id;
-            req.session.merchant = { id: merchant._id.toString(), email, stallId };
         } else {
             const chosenStallId = String(req.body.stallId || '');
             if (!chosenStallId) {
                 return res.status(400).json({ success: false, message: 'Choose a stall to manage.' });
             }
-            const merchant = await createMerchant({ email, password });
+            merchant = await createMerchant({ email, password });
             const claimed = await claimExistingStall(chosenStallId, merchant._id);
             if (!claimed) {
                 await getDB().collection('merchants').deleteOne({ _id: merchant._id });
@@ -240,11 +284,12 @@ app.post('/merchant/signup', handleUpload('stallImage'), async (req, res) => {
             }
             await linkMerchantToStall(merchant._id, chosenStallId);
             stallId = chosenStallId;
-            req.session.merchant = { id: merchant._id.toString(), email, stallId };
         }
 
+        req.session.merchant = { id: merchant._id.toString(), email, stallId };
         delete req.session.user;
-        res.json({ success: true });
+        delete req.session.admin;
+        res.json({ success: true, status: merchant.status || 'pending' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
@@ -263,7 +308,8 @@ app.post('/merchant/login', async (req, res) => {
 
         req.session.merchant = { id: merchant._id.toString(), email: merchant.email, stallId: merchant.stallId };
         delete req.session.user;
-        res.json({ success: true });
+        delete req.session.admin;
+        res.json({ success: true, status: merchant.status || 'approved' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
@@ -272,6 +318,68 @@ app.post('/merchant/login', async (req, res) => {
 
 app.post('/merchant/logout', (req, res) => {
     delete req.session.merchant;
+    res.json({ success: true });
+});
+
+// Shown to a merchant whose account isn't (or is no longer) approved —
+// reachable without triggering requireMerchant's redirect loop.
+app.get('/merchant/pending', async (req, res) => {
+    if (!req.session.merchant) return res.redirect('/');
+    try {
+        const db = getDB();
+        const merchant = await db.collection('merchants').findOne({ _id: new ObjectId(req.session.merchant.id) });
+        const status = merchant ? (merchant.status || 'approved') : 'pending';
+        if (status === 'approved') return res.redirect('/merchant/dashboard');
+        res.render('merchant/pending', { status, message: merchantStatusMessage(status) });
+    } catch (err) {
+        console.error(err);
+        res.render('merchant/pending', { status: 'pending', message: merchantStatusMessage('pending') });
+    }
+});
+
+// ------------------------------------------------------------------
+// Admin auth: a third, separate session role (adminId + password).
+// There is no public signup route — accounts are seeded (see seed.js)
+// or created by an existing admin from the Manage Users page.
+// ------------------------------------------------------------------
+
+function requireAdmin(req, res, next) {
+    if (!req.session.admin) {
+        if (req.path.startsWith('/api/') || req.method !== 'GET') {
+            return res.status(401).json({ success: false, message: 'Please log in as an admin.' });
+        }
+        return res.redirect('/admin/login');
+    }
+    next();
+}
+
+app.get('/admin/login', (req, res) => {
+    if (req.session.admin) return res.redirect('/admin/dashboard');
+    res.render('admin/login');
+});
+
+app.post('/admin/login', async (req, res) => {
+    try {
+        const adminId = String(req.body.adminId || '').trim();
+        const password = String(req.body.password || '');
+
+        const admin = await findAdminById(adminId);
+        if (!admin || !(await verifyAdminPassword(admin, password))) {
+            return res.status(400).json({ success: false, message: 'Incorrect admin ID or password.' });
+        }
+
+        req.session.admin = { id: admin._id.toString(), adminId: admin.adminId, name: admin.name };
+        delete req.session.user;
+        delete req.session.merchant;
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Something went wrong. Please try again.' });
+    }
+});
+
+app.post('/admin/logout', (req, res) => {
+    delete req.session.admin;
     res.json({ success: true });
 });
 
@@ -679,6 +787,354 @@ app.get('/merchant/reviews', requireMerchant, attachMerchantStall, async (req, r
     } catch (err) {
         console.error(err);
         res.status(500).send('Could not load reviews.');
+    }
+});
+
+// ------------------------------------------------------------------
+// Admin dashboard
+// ------------------------------------------------------------------
+
+app.get('/admin/dashboard', requireAdmin, async (req, res) => {
+    try {
+        const stats = await getPlatformDashboardStats();
+        stats.recentOrders.forEach(o => { o.status = normaliseStatus(o.status); });
+        res.render('admin/dashboard', { stats, statusLabels: ORDER_STATUS_LABELS });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Could not load the admin dashboard.');
+    }
+});
+
+// ------------------------------------------------------------------
+// Admin: manage merchants / stores
+// ------------------------------------------------------------------
+
+app.get('/admin/merchants', requireAdmin, async (req, res) => {
+    try {
+        const [merchants, unclaimedStalls] = await Promise.all([
+            listMerchantsWithStalls(),
+            getUnclaimedStalls()
+        ]);
+        res.render('admin/merchants', { merchants, unclaimedStalls });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Could not load merchants.');
+    }
+});
+
+app.post('/admin/merchants/new', requireAdmin, handleUpload('stallImage'), async (req, res) => {
+    try {
+        const email = String(req.body.email || '').trim().toLowerCase();
+        const password = String(req.body.password || '');
+        const confirmPassword = String(req.body.confirmPassword || '');
+        const stallMode = req.body.stallMode === 'new' ? 'new' : 'existing';
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
+        }
+        if (password !== confirmPassword) {
+            return res.status(400).json({ success: false, message: 'Passwords do not match.' });
+        }
+        const existing = await findMerchantByEmail(email);
+        if (existing) {
+            return res.status(400).json({ success: false, message: 'An account with this email already exists.' });
+        }
+
+        // Admin-added merchants are already vetted, so they skip the pending queue.
+        const merchant = await createMerchant({ email, password, status: 'approved' });
+
+        if (stallMode === 'new') {
+            const stallName = String(req.body.newStallName || '').trim();
+            if (!stallName) {
+                await getDB().collection('merchants').deleteOne({ _id: merchant._id });
+                return res.status(400).json({ success: false, message: 'Enter a name for the new stall.' });
+            }
+            const image = req.file ? `/images/uploads/${req.file.filename}` : null;
+            const stall = await createAndClaimStall({ name: stallName, image, merchantId: merchant._id });
+            await linkMerchantToStall(merchant._id, stall.id);
+        } else {
+            const chosenStallId = String(req.body.stallId || '');
+            if (!chosenStallId) {
+                await getDB().collection('merchants').deleteOne({ _id: merchant._id });
+                return res.status(400).json({ success: false, message: 'Choose a stall to assign.' });
+            }
+            const claimed = await claimExistingStall(chosenStallId, merchant._id);
+            if (!claimed) {
+                await getDB().collection('merchants').deleteOne({ _id: merchant._id });
+                return res.status(400).json({ success: false, message: 'That stall was just claimed by someone else.' });
+            }
+            await linkMerchantToStall(merchant._id, chosenStallId);
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not add the merchant.' });
+    }
+});
+
+app.post('/admin/merchants/:id/approve', requireAdmin, async (req, res) => {
+    try {
+        const ok = await setMerchantStatus(req.params.id, 'approved');
+        if (!ok) return res.status(404).json({ success: false, message: 'Merchant not found.' });
+        res.json({ success: true, status: 'approved' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not approve merchant.' });
+    }
+});
+
+app.post('/admin/merchants/:id/reject', requireAdmin, async (req, res) => {
+    try {
+        const ok = await setMerchantStatus(req.params.id, 'rejected');
+        if (!ok) return res.status(404).json({ success: false, message: 'Merchant not found.' });
+        res.json({ success: true, status: 'rejected' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not reject merchant.' });
+    }
+});
+
+// Toggles between 'suspended' and 'approved' depending on current state.
+app.post('/admin/merchants/:id/suspend', requireAdmin, async (req, res) => {
+    try {
+        const db = getDB();
+        const merchant = await db.collection('merchants').findOne({ _id: new ObjectId(req.params.id) });
+        if (!merchant) return res.status(404).json({ success: false, message: 'Merchant not found.' });
+
+        const newStatus = merchant.status === 'suspended' ? 'approved' : 'suspended';
+        await setMerchantStatus(req.params.id, newStatus);
+        res.json({ success: true, status: newStatus });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not update merchant.' });
+    }
+});
+
+app.post('/admin/merchants/:id/remove', requireAdmin, async (req, res) => {
+    try {
+        const ok = await removeMerchant(req.params.id);
+        if (!ok) return res.status(404).json({ success: false, message: 'Merchant not found.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not remove merchant.' });
+    }
+});
+
+app.post('/admin/merchants/:id/edit', requireAdmin, handleUpload('image'), async (req, res) => {
+    try {
+        const db = getDB();
+        const merchant = await db.collection('merchants').findOne({ _id: new ObjectId(req.params.id) });
+        if (!merchant || !merchant.stallId) {
+            return res.status(404).json({ success: false, message: 'Merchant or stall not found.' });
+        }
+        const name = String(req.body.name || '').trim();
+        if (!name) return res.status(400).json({ success: false, message: 'Enter a store name.' });
+
+        const update = { name };
+        if (req.file) update.image = `/images/uploads/${req.file.filename}`;
+
+        await db.collection('stalls').updateOne({ id: merchant.stallId }, { $set: update });
+        res.json({ success: true, image: update.image });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not update store details.' });
+    }
+});
+
+app.post('/admin/merchants/:id/reset-password', requireAdmin, async (req, res) => {
+    try {
+        const tempPassword = await resetMerchantPassword(req.params.id);
+        if (!tempPassword) return res.status(404).json({ success: false, message: 'Merchant not found.' });
+        res.json({ success: true, tempPassword });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not reset password.' });
+    }
+});
+
+// ------------------------------------------------------------------
+// Admin: all-store orders, per-store sales, reports & analytics
+// ------------------------------------------------------------------
+
+app.get('/admin/orders', requireAdmin, async (req, res) => {
+    try {
+        const db = getDB();
+        const [orders, stalls] = await Promise.all([
+            db.collection('orders').find({}).sort({ createdAt: -1 }).toArray(),
+            db.collection('stalls').find({}).sort({ name: 1 }).toArray()
+        ]);
+        const stallNameById = {};
+        stalls.forEach(s => { stallNameById[s.id] = s.name; });
+        orders.forEach(o => {
+            o.stallName = stallNameById[o.stallId] || o.stallId;
+            o.status = normaliseStatus(o.status);
+        });
+
+        res.render('admin/orders', { orders, stalls, statuses: [...ORDER_FLOW, 'cancelled'], statusLabels: ORDER_STATUS_LABELS, paymentLabels: PAYMENT_LABELS });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Could not load orders.');
+    }
+});
+
+app.get('/admin/stores', requireAdmin, async (req, res) => {
+    try {
+        const breakdown = await getStoreSalesBreakdown();
+        res.render('admin/stores', { breakdown });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Could not load store sales.');
+    }
+});
+
+app.get('/admin/reports', requireAdmin, (req, res) => {
+    res.render('admin/reports');
+});
+
+app.get('/api/admin/reports-data', requireAdmin, async (req, res) => {
+    try {
+        const data = await getReportsData();
+        res.json({ success: true, ...data });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not load reports.' });
+    }
+});
+
+// ------------------------------------------------------------------
+// Admin: reviews & feedback moderation
+// ------------------------------------------------------------------
+
+app.get('/admin/reviews', requireAdmin, async (req, res) => {
+    try {
+        const db = getDB();
+        const sort = req.query.sort === 'highest' ? 'highest' : 'newest';
+        const sortSpec = sort === 'highest' ? { rating: -1, createdAt: -1 } : { createdAt: -1 };
+
+        const [reviews, foods, stalls, lowRatedStores] = await Promise.all([
+            db.collection('reviews').find({}).sort(sortSpec).toArray(),
+            db.collection('foods').find({}).toArray(),
+            db.collection('stalls').find({}).toArray(),
+            getStoreRatingBreakdown()
+        ]);
+
+        const foodById = {};
+        foods.forEach(f => { foodById[f.id] = f; });
+        const stallNameById = {};
+        stalls.forEach(s => { stallNameById[s.id] = s.name; });
+
+        reviews.forEach(r => {
+            const food = foodById[r.foodId];
+            r.foodName = food ? food.name : 'Deleted dish';
+            r.stallName = food ? (stallNameById[food.stall_id] || food.stall_id) : 'Unknown store';
+        });
+
+        res.render('admin/reviews', { reviews, sort, lowRatedStores });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Could not load reviews.');
+    }
+});
+
+app.post('/admin/reviews/:reviewId/delete', requireAdmin, async (req, res) => {
+    try {
+        const db = getDB();
+        const result = await db.collection('reviews').deleteOne({ _id: new ObjectId(req.params.reviewId) });
+        if (result.deletedCount === 0) return res.status(404).json({ success: false, message: 'Review not found.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not delete review.' });
+    }
+});
+
+// ------------------------------------------------------------------
+// Admin: manage user accounts (customers & fellow admins)
+// ------------------------------------------------------------------
+
+app.get('/admin/users', requireAdmin, async (req, res) => {
+    try {
+        const db = getDB();
+        const [customers, admins] = await Promise.all([
+            db.collection('users').find({}).sort({ createdAt: -1 }).toArray(),
+            db.collection('admins').find({}).sort({ createdAt: -1 }).toArray()
+        ]);
+        res.render('admin/users', { customers, admins });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send('Could not load users.');
+    }
+});
+
+app.post('/admin/users/customers/:id/toggle-disable', requireAdmin, async (req, res) => {
+    try {
+        const db = getDB();
+        const user = await db.collection('users').findOne({ _id: new ObjectId(req.params.id) });
+        if (!user) return res.status(404).json({ success: false, message: 'Customer not found.' });
+
+        const disabled = !user.disabled;
+        await db.collection('users').updateOne({ _id: new ObjectId(req.params.id) }, { $set: { disabled } });
+        res.json({ success: true, disabled });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not update customer.' });
+    }
+});
+
+app.post('/admin/users/customers/:id/delete', requireAdmin, async (req, res) => {
+    try {
+        const db = getDB();
+        const result = await db.collection('users').deleteOne({ _id: new ObjectId(req.params.id) });
+        if (result.deletedCount === 0) return res.status(404).json({ success: false, message: 'Customer not found.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not delete customer.' });
+    }
+});
+
+app.post('/admin/users/admins/new', requireAdmin, async (req, res) => {
+    try {
+        const adminId = String(req.body.adminId || '').trim();
+        const password = String(req.body.password || '');
+        const name = String(req.body.name || '').trim();
+
+        if (!adminId || password.length < 6) {
+            return res.status(400).json({ success: false, message: 'Enter an admin ID and a password of at least 6 characters.' });
+        }
+        const existing = await findAdminById(adminId);
+        if (existing) {
+            return res.status(400).json({ success: false, message: 'That admin ID is already taken.' });
+        }
+        await createAdmin({ adminId, password, name });
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not create admin account.' });
+    }
+});
+
+app.post('/admin/users/admins/:id/delete', requireAdmin, async (req, res) => {
+    try {
+        if (req.params.id === req.session.admin.id) {
+            return res.status(400).json({ success: false, message: 'You cannot delete your own account while logged in.' });
+        }
+        const db = getDB();
+        const totalAdmins = await db.collection('admins').countDocuments({});
+        if (totalAdmins <= 1) {
+            return res.status(400).json({ success: false, message: 'At least one admin account must remain.' });
+        }
+        const ok = await deleteAdmin(req.params.id);
+        if (!ok) return res.status(404).json({ success: false, message: 'Admin not found.' });
+        res.json({ success: true });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Could not delete admin.' });
     }
 });
 

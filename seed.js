@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { MongoClient } = require('mongodb');
+const bcrypt = require('bcryptjs');
 
 const uri = process.env.MONGODB_URI;
 
@@ -75,6 +76,30 @@ async function seedDatabase() {
                 },
                 { upsert: true }
             );
+        }
+
+        // Legacy merchants predate the approval workflow — treat them as
+        // already approved instead of retroactively locking real, active
+        // stores out of their own dashboards.
+        console.log("Backfilling merchant approval status...");
+        await db.collection("merchants").updateMany(
+            { status: { $exists: false } },
+            { $set: { status: 'approved' } }
+        );
+
+        // Seed exactly one admin account so there's a way to reach
+        // /admin/login on a fresh database. Never overwrites an existing
+        // admin — change this password after first login.
+        const adminCount = await db.collection("admins").countDocuments();
+        if (adminCount === 0) {
+            const passwordHash = await bcrypt.hash("Admin@123", 10);
+            await db.collection("admins").insertOne({
+                adminId: "admin",
+                passwordHash,
+                name: "Super Admin",
+                createdAt: new Date()
+            });
+            console.log("Created default admin account (admin / Admin@123) — please change this password after logging in.");
         }
 
         console.log("✅ Success! Your database is now up to date.");

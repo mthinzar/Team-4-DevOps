@@ -22,13 +22,17 @@ async function findMerchantByEmail(email) {
     return db.collection('merchants').findOne({ email: String(email).toLowerCase().trim() });
 }
 
-async function createMerchant({ email, password }) {
+// status defaults to 'pending' for self-service signups, so an admin can
+// approve/reject them; admin-created merchants pass status:'approved' to
+// skip the review queue since the admin already vetted them directly.
+async function createMerchant({ email, password, status = 'pending' }) {
     const db = getDB();
     const passwordHash = await bcrypt.hash(password, 10);
     const merchant = {
         email: String(email).toLowerCase().trim(),
         passwordHash,
         stallId: null,
+        status,
         createdAt: new Date()
     };
     const result = await db.collection('merchants').insertOne(merchant);
@@ -90,6 +94,68 @@ async function createAndClaimStall({ name, image, merchantId }) {
     return stall;
 }
 
+// ------------------------------------------------------------------
+// Admin-facing management helpers. Every merchant here is joined with
+// its stall (if any) so the admin UI can show store name/status without
+// a separate query per row.
+// ------------------------------------------------------------------
+
+async function listMerchantsWithStalls() {
+    const db = getDB();
+    const merchants = await db.collection('merchants').find({}).sort({ createdAt: -1 }).toArray();
+    const stallIds = merchants.map(m => m.stallId).filter(Boolean);
+    const stalls = stallIds.length
+        ? await db.collection('stalls').find({ id: { $in: stallIds } }).toArray()
+        : [];
+    const stallById = {};
+    stalls.forEach(s => { stallById[s.id] = s; });
+
+    return merchants.map(m => ({
+        ...m,
+        status: m.status || 'approved', // legacy accounts predating the status field
+        stall: m.stallId ? stallById[m.stallId] || null : null
+    }));
+}
+
+async function setMerchantStatus(merchantId, status) {
+    const db = getDB();
+    const result = await db.collection('merchants').updateOne(
+        { _id: new ObjectId(merchantId) },
+        { $set: { status } }
+    );
+    return result.matchedCount === 1;
+}
+
+// Removing a merchant frees their stall for someone else to claim, but
+// keeps the stall itself (and its order/review history) intact.
+async function removeMerchant(merchantId) {
+    const db = getDB();
+    const merchant = await db.collection('merchants').findOne({ _id: new ObjectId(merchantId) });
+    if (!merchant) return false;
+
+    if (merchant.stallId) {
+        await db.collection('stalls').updateOne({ id: merchant.stallId }, { $set: { merchantId: null } });
+    }
+    await db.collection('merchants').deleteOne({ _id: new ObjectId(merchantId) });
+    return true;
+}
+
+function generateTempPassword() {
+    return Math.random().toString(36).slice(-8) + Math.floor(Math.random() * 10);
+}
+
+async function resetMerchantPassword(merchantId) {
+    const db = getDB();
+    const tempPassword = generateTempPassword();
+    const passwordHash = await bcrypt.hash(tempPassword, 10);
+    const result = await db.collection('merchants').updateOne(
+        { _id: new ObjectId(merchantId) },
+        { $set: { passwordHash } }
+    );
+    if (result.matchedCount === 0) return null;
+    return tempPassword;
+}
+
 module.exports = {
     slugify,
     findMerchantByEmail,
@@ -98,5 +164,9 @@ module.exports = {
     linkMerchantToStall,
     getUnclaimedStalls,
     claimExistingStall,
-    createAndClaimStall
+    createAndClaimStall,
+    listMerchantsWithStalls,
+    setMerchantStatus,
+    removeMerchant,
+    resetMerchantPassword
 };
