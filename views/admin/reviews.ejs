@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reviews &amp; Feedback - FoodHub Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <%- include('../partials/admin-styles') %>
+    <style>
+        .review-card { background: var(--a-panel); border: 1px solid var(--a-border); border-radius: 14px; padding: 1.1rem 1.25rem; margin-bottom: 0.9rem; }
+        .review-stars { color: var(--a-accent); letter-spacing: 1px; }
+        .low-rated-row { display: flex; justify-content: space-between; padding: 0.45rem 0; border-bottom: 1px solid var(--a-border); }
+        .low-rated-row:last-child { border-bottom: none; }
+    </style>
+</head>
+<body class="admin-body">
+
+<%- include('../partials/admin-nav', { activePage: 'reviews' }) %>
+
+<div class="container-fluid px-3 px-md-4 py-4">
+    <div class="row g-3">
+        <div class="col-lg-8">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+                <div>
+                    <h1 class="a-page-title mb-1">Reviews &amp; Feedback</h1>
+                    <p class="a-page-sub mb-0">Every rating &amp; comment left across all stores.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/admin/reviews?sort=newest" class="filter-pill <%= sort === 'newest' ? 'active' : '' %>">Newest</a>
+                    <a href="/admin/reviews?sort=highest" class="filter-pill <%= sort === 'highest' ? 'active' : '' %>">Highest Rated</a>
+                </div>
+            </div>
+
+            <% if (reviews.length === 0) { %>
+                <div class="a-card a-empty">No reviews yet.</div>
+            <% } else { %>
+                <% reviews.forEach(review => { %>
+                    <div class="review-card" id="review-<%= review._id %>">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <div class="fw-bold"><%= review.userName %></div>
+                                <div class="small" style="color: var(--a-muted);">
+                                    on <span class="fw-semibold"><%= review.foodName %></span> &middot; <%= review.stallName %> &middot; <%= new Date(review.createdAt).toLocaleDateString() %>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="review-stars"><%= '★'.repeat(review.rating) %><%= '☆'.repeat(5 - review.rating) %></div>
+                                <button class="btn-danger-outline btn-delete-review" data-id="<%= review._id %>">Remove</button>
+                            </div>
+                        </div>
+                        <% if (review.comment) { %><p class="mb-0 mt-2 small"><%= review.comment %></p><% } %>
+                    </div>
+                <% }) %>
+            <% } %>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="a-card">
+                <h6 class="fw-bold mb-3">Stores With Poor Ratings</h6>
+                <% if (lowRatedStores.length === 0) { %>
+                    <div class="a-empty">No rated stores yet.</div>
+                <% } else { %>
+                    <% lowRatedStores.forEach(s => { %>
+                        <div class="low-rated-row">
+                            <span class="fw-semibold"><%= s.name %></span>
+                            <span class="small" style="color: var(--a-muted);"><%= s.avgRating %>★ (<%= s.reviewCount %>)</span>
+                        </div>
+                    <% }) %>
+                <% } %>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.querySelectorAll('.btn-delete-review').forEach(btn => {
+        btn.addEventListener('click', function () {
+            if (!confirm('Remove this review? This cannot be undone.')) return;
+            const id = this.dataset.id;
+            this.disabled = true;
+            fetch(`/admin/reviews/${id}/delete`, { method: 'POST' })
+                .then(r => r.json())
+                .then(result => {
+                    if (!result.success) { alert(result.message || 'Could not remove review.'); this.disabled = false; return; }
+                    document.getElementById(`review-${id}`).remove();
+                })
+                .catch(() => { this.disabled = false; alert('Could not reach the server.'); });
+        });
+    });
+</script>
+
+</body>
+</html>

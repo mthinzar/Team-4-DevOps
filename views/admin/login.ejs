@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login - FoodHub</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <%- include('../partials/admin-styles') %>
+    <style>
+        .admin-login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+        .admin-login-card { width: 100%; max-width: 400px; }
+    </style>
+</head>
+<body class="admin-body">
+
+<div class="admin-login-wrap">
+    <div class="a-card admin-login-card">
+        <div class="text-center mb-4">
+            <img src="/images/logo.png" alt="FoodHub" style="height:56px;"
+                 onerror="this.style.display='none';document.getElementById('loginBrandText').style.display='block';">
+            <h1 class="fw-bold mb-1" id="loginBrandText" style="display:none;">food<span class="a-accent">hub</span></h1>
+            <p class="a-page-sub mb-0 mt-2">Admin Console</p>
+        </div>
+
+        <div class="alert alert-danger py-2 small" id="loginError" style="display:none;"></div>
+
+        <form id="adminLoginForm">
+            <div class="mb-3">
+                <label class="form-label">Admin ID</label>
+                <input type="text" class="form-control" id="adminId" required autofocus>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Password</label>
+                <input type="password" class="form-control" id="adminPassword" required>
+            </div>
+            <button type="submit" class="btn-admin w-100" id="adminLoginBtn">Log In</button>
+        </form>
+
+        <p class="text-center small mt-4 mb-0" style="color: var(--a-muted);">
+            <a href="/" style="color: var(--a-muted);">&larr; Back to FoodHub</a>
+        </p>
+    </div>
+</div>
+
+<script>
+    document.getElementById('adminLoginForm').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const errorEl = document.getElementById('loginError');
+        errorEl.style.display = 'none';
+
+        const btn = document.getElementById('adminLoginBtn');
+        btn.disabled = true;
+        btn.textContent = 'Logging in...';
+
+        fetch('/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                adminId: document.getElementById('adminId').value.trim(),
+                password: document.getElementById('adminPassword').value
+            })
+        })
+        .then(r => r.json())
+        .then(result => {
+            btn.disabled = false;
+            btn.textContent = 'Log In';
+            if (!result.success) {
+                errorEl.textContent = result.message || 'Login failed.';
+                errorEl.style.display = 'block';
+                return;
+            }
+            window.location.href = '/admin/dashboard';
+        })
+        .catch(() => {
+            btn.disabled = false;
+            btn.textContent = 'Log In';
+            errorEl.textContent = 'Could not reach the server. Please try again.';
+            errorEl.style.display = 'block';
+        });
+    });
+</script>
+
+</body>
+</html>

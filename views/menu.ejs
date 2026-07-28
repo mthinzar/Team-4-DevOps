@@ -1207,7 +1207,7 @@
                     errEl.style.display = 'block';
                     return;
                 }
-                window.location.href = '/merchant/dashboard';
+                window.location.href = result.status === 'approved' ? '/merchant/dashboard' : '/merchant/pending';
             })
             .catch(() => {
                 this.disabled = false;
@@ -1252,7 +1252,7 @@
                         errEl.style.display = 'block';
                         return;
                     }
-                    window.location.href = '/merchant/dashboard';
+                    window.location.href = result.status === 'approved' ? '/merchant/dashboard' : '/merchant/pending';
                 })
                 .catch(() => {
                     this.disabled = false;
