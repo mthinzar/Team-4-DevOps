@@ -1,0 +1,13 @@
+services:
+  web:
+    build: .
+    ports:
+      - "80:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+    volumes:
+      - foodhub_uploads:/app/public/images/uploads
+
+volumes:
+  foodhub_uploads:
