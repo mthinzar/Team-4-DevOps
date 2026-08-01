@@ -1,0 +1,57 @@
+# ============================================================
+#  Local stack.
+#
+#    docker compose up -d mongo        # just the database
+#    docker compose up app             # database + app on :3000
+#    docker compose run --rm tests     # full suite against a clean DB
+#
+#  The `tests` service exists so nobody has to install Mongo locally
+#  to run the integration suite.
+# ============================================================
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: foodhub-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--quiet', '--eval', "db.runCommand({ping:1}).ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  app:
+    build: .
+    container_name: foodhub-app
+    ports:
+      - '3000:3000'
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/foodhub
+      SESSION_SECRET: ${SESSION_SECRET:-local-dev-secret}
+      PORT: '3000'
+    depends_on:
+      mongo:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Runs the suite inside the same network as mongo. Uses the plain
+  # node image with a bind mount so a code change needs no rebuild.
+  tests:
+    image: node:22-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      MONGODB_URI: mongodb://mongo:27017/foodhub
+      SESSION_SECRET: compose-test-secret
+    depends_on:
+      mongo:
+        condition: service_healthy
+    command: sh -c "npm ci && npm run seed && npm run test:unit && npm run test:integration"
+
+volumes:
+  mongo-data:
