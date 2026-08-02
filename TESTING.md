@@ -2,49 +2,52 @@
 
 Automated tests for FoodHub.
 
-They use the test runner that comes built into Node, so there is
-**nothing new to install**. No Jest, no Mocha, no Supertest. Adding those
-would mean changing `package-lock.json`, and then `npm ci` would fail for
-everyone until they reinstalled. Everything here works on a fresh clone.
+**Nothing here needs MongoDB or Docker.** The tests only cover functions
+that work on their own, so `npm test` runs on any laptop with Node
+installed, and the CI pipeline is just install, lint, test.
+
+They also use the test runner built into Node, so there is nothing new to
+install. No Jest, no Mocha. That matters because adding them would change
+`package-lock.json`, and then `npm ci` would break for everyone until they
+reinstalled.
 
 ---
 
 ## How to run them
 
 ```bash
-# Unit tests only. No database needed, takes about a second.
-npm run test:unit
+npm install        # once
+npm test           # lint + all 108 unit tests, about 1 second
+```
 
-# Lint plus unit tests. This is what "npm test" does.
-npm test
+Other commands:
 
-# All of them, with a local MongoDB
-docker compose up -d mongo
-npm run seed
-npm run test:integration
-
-# Or run everything inside Docker, with no MongoDB installed on your laptop
-docker compose run --rm tests
+```bash
+npm run test:unit       # just the tests
+npm run test:coverage   # tests plus a coverage report
+npm run test:watch      # re-runs whenever you save a file
+npm run lint            # syntax + template check only
+npm run test:issues     # the known bugs (these fail on purpose)
 ```
 
 ---
 
-## What the three folders do
+## What is tested
 
-| Folder | Command | Needs MongoDB | Blocks CI |
-|---|---|---|---|
-| `tests/unit` | `npm run test:unit` | No | Yes |
-| `tests/integration` | `npm run test:integration` | Yes | Yes |
-| `tests/security` | `npm run test:security` | Yes | Not yet |
+139 tests across five files.
 
-### tests/unit
+| Test file | Tests | What it covers |
+|---|---|---|
+| `tests/unit/pricing.test.js` | `data/pricing.js` | How much a customer is charged |
+| `tests/unit/payments.test.js` | `data/payments.js` | Card rules and the PayNow QR code |
+| `tests/unit/orderStatus.test.js` | `data/orderStatus.js` | The order steps on the merchant page |
+| `tests/unit/validation.test.js` | `data/validation.js` | Every form check on the website |
+| `tests/unit/cart.test.js` | `public/js/cart.js` | The shopping cart the customer clicks |
 
-`data/pricing.js` and `data/payments.js` are plain functions that do not
-touch the database, so they can be tested on their own. They also hold the
-two most important things in the project: how much a customer pays, and
-whether a card is accepted.
+### The most important test
 
-The most important test in the whole repo is this one:
+The cart lives in the browser, in localStorage, so anyone can edit it
+before it is sent. This test proves that does not matter:
 
 ```js
 test('priceCart ignores the price sent by the browser', () => {
@@ -56,136 +59,161 @@ test('priceCart ignores the price sent by the browser', () => {
 });
 ```
 
-Coverage from `npm run test:coverage`:
+### The shopping cart
+
+`public/js/cart.js` normally runs in the browser, but all of it is plain
+functions, so the tests load it in Node with a small stand-in for
+`localStorage` and `document` (about 15 lines at the top of
+`cart.test.js`). Every place cart.js touches the page is already written
+as "if the element exists", so a stand-in that finds nothing is enough.
+
+One line was added to the bottom of `cart.js` so Node can load it. In a
+browser `module` does not exist, so the line is skipped and **nothing
+about the website changes**.
+
+This covers Add to cart, the + and - buttons, Remove, the badge number,
+the total, the Reorder button, and the cart surviving a page refresh.
+
+### Coverage
 
 ```
-file          | line % | branch % | funcs %
-payments.js   | 100.00 |    97.67 |  100.00
-pricing.js    |  98.02 |    95.56 |  100.00
+file            | line % | branch % | funcs %
+orderStatus.js  | 100.00 |   100.00 |  100.00
+payments.js     | 100.00 |    97.67 |  100.00
+pricing.js      |  98.02 |    95.56 |  100.00
+validation.js   | 100.00 |   100.00 |  100.00
+cart.js         |  70.67 |    90.00 |   91.67
 ```
+
+`cart.js` is at 70% because the parts that draw the cart drawer on
+screen (`updateCartUI`, `openCartDrawer`, the page-load handler) need a
+real browser. The cart's logic is fully covered; its appearance is not.
 
 The two uncovered lines in `pricing.js` are the `total > 0` check. It
 cannot be reached, because `unitPrice()` already refuses any dish that
-would price at zero or less. It is a safety net that is kept on purpose,
-so please do not delete it to make the number go up.
-
-### tests/integration
-
-`tests/helpers/server.js` starts the real `app.js` in the background, the
-same way `npm start` does, and then the tests send real HTTP requests to
-it. Nothing in `app.js` had to be changed to make this work.
-
-`tests/helpers/client.js` remembers cookies, because `fetch()` does not.
-One client behaves like one browser, so a test can log in as two
-merchants at the same time and check that neither can see the other's
-dishes or orders.
-
-What is covered: all three logins and keeping the roles separate,
-checkout prices, all three payment methods including PayNow being spent
-twice, the merchant menu, the order steps, and the admin pages.
-
-### tests/security
-
-Every test checks what the app **should** do. The ones that fail today
-start with `BUG:` — see below.
+would price at zero or less. It is a safety net kept on purpose, so
+please do not delete it to make the number go up.
 
 ---
 
-## Important: database safety
+## Two new files in data/
 
-`db.js` always calls `client.db('foodhub')`, so the database name inside
-`MONGODB_URI` is **ignored**. If you ran these tests with the Atlas
-connection string from your `.env`, they would write to the real
+To test the website's own rules, some logic was moved out of `app.js`
+into two new modules. `app.js` now loads them instead of holding its own
+copy. **Nothing about how the website behaves has changed** — the code is
+the same, it just lives somewhere it can be reached from a test.
+
+**`data/orderStatus.js`** — the order steps.
+
+Moved out of `app.js` lines 595 to 623: `ORDER_FLOW`,
+`ORDER_STATUS_LABELS`, `NEXT_STEP`, `CANCELLABLE`, `PAYMENT_LABELS`,
+`normaliseStatus`, and the order id and queue number.
+
+Two new functions replace the checks that used to sit inside the status
+route, so the same rule is now testable and only written once:
+
+```js
+canCancel(current)             // can this order still be cancelled?
+canMoveTo(current, requested)  // is this the one step it may take next?
+```
+
+**`data/validation.js`** — the form checks.
+
+Moved out of `app.js`: `validPhone`, `merchantStatusMessage`, the email
+pattern (which was copied in two places), the six-character password rule
+(copied in three), the dish name and price check, the upload type check
+and the upload file name. `slugify` moved here from `data/merchants.js`,
+which now loads it from here and still exports it, so nothing else
+changed.
+
+The email and password rules being in one place instead of five is worth
+mentioning on its own — before this, changing the minimum password length
+meant remembering three separate lines.
+
+---
+
+## Known bugs
+
+`tests/known-issues/known-issues.test.js` holds tests for bugs we already
+know about. They fail on purpose. Each one has a comment saying what is
+wrong and the code to fix it.
+
+Run them with `npm run test:issues`. They live in their own folder so they
+do not turn the build red, and CI runs them as a separate step that
+reports without blocking.
+
+| Test | Where | What to change |
+|---|---|---|
+| An upload cannot be saved with a web page ending | `data/validation.js` | Work out the file ending from the file type, not the file name |
+| An upload always ends in a real picture ending | `data/validation.js` | Same fix |
+| Two orders 17 minutes apart get different ids | `data/orderStatus.js` | Use `crypto.randomBytes` and add a unique index |
+| An order id has enough characters | `data/orderStatus.js` | Same fix |
+| A quantity that is not a number is refused | `data/pricing.js` | Check `typeof qty === 'number'` first |
+
+Once they all pass, move them into `tests/unit` and delete the
+`known-issues` job from the workflow file.
+
+### What is NOT tested
+
+Being clear about this, because the numbers look better than the
+coverage really is:
+
+| | Tested |
+|---|---|
+| Routes in `app.js` | **0 of 60** |
+| Page templates rendered | **0 of 25** |
+| Browser JavaScript inside the `.ejs` pages | **0 of about 2,300 lines** |
+
+Nothing here loads a page, clicks a button, logs anyone in, or writes to
+the database. `data/adminStats.js`, `data/merchantStats.js`,
+`data/reviews.js`, `data/admins.js` and `data/dishes.js` are not covered
+at all, because every function in them talks to MongoDB.
+
+The clearest example of the limit: `canMoveTo('pending', 'completed')`
+returns false and is tested from every angle. But the route that uses it
+also has to check the order belongs to that merchant's stall. If someone
+deleted that check tomorrow, **all 139 tests would still pass.**
+
+Catching that needs integration tests (which need a database), and
+catching a broken button or a page that will not load needs browser
+tests such as Playwright (which needs both).
+
+### Bugs that unit tests cannot catch
+
+Being honest about the limit of this approach: unit tests check functions
+on their own, so they cannot catch bugs that only appear when the routes,
+sessions and database work together. These were found by reading the code
+and are still open:
+
+- `/orders/:orderId/collect` (`app.js:1616`) does not check the current
+  status, so a customer can mark their own order collected the moment
+  they place it — which also gets around the rule that you can only
+  review food you collected.
+- `/merchant/orders/:orderId/preptime` (`app.js:741`) checks the stall
+  when it reads the order but not when it writes, so with a repeated
+  order id one merchant can change another's order.
+- `/auth/send-code` (`app.js:124`) sends the login code back in its own
+  reply, so anyone can log in as anyone.
+- No login route calls `req.session.regenerate()`.
+- The session cookie has no `sameSite` or `secure` setting.
+- `index.ejs:1295` writes the user's name into a `<script>` block without
+  escaping `<`.
+
+Catching those automatically would need integration tests, which need a
 database.
-
-So `tests/helpers/server.js` refuses to start unless MongoDB is running
-locally:
-
-```
-These tests write to the "foodhub" database and would damage real data.
-Start a local MongoDB first (docker compose up -d mongo)
-```
-
-As a second layer, everything the tests create is named so it can be
-found again: stall and dish IDs start with `zztest-`, merchant emails end
-with `@test.invalid`, admin IDs start with `zztest-`, and customers are
-called `Test something`. `cleanup()` deletes only those, and never drops
-a collection, so the demo data from `seed.js` is safe.
-
----
-
-## Bugs the tests currently catch
-
-These are real bugs. The tests are written the right way round, so once
-the bug is fixed the test passes and keeps passing.
-
-The `security` job in CI has `continue-on-error: true` only until this
-list is empty. Delete that line as the last step.
-
-| # | Test | Where | What to change |
-|---|---|---|---|
-| 1 | A customer cannot collect an order that has just been placed | `app.js:1616` | Only allow it when the order is already `ready` |
-| 2 | You cannot get around the collected-order rule for reviews | `app.js:1225` | Fixed by #1 |
-| 3 | Changing a waiting time cannot touch another stall's order | `app.js:741` | Add `stallId` to the update filter |
-| 4 | Order IDs are long enough not to repeat | `app.js:1344` | Add random characters and a unique index. Right now IDs repeat about every 17 minutes |
-| 5 | An uploaded file cannot be saved as a web page | `app.js:75` | Work out the file ending from the file type, not the file name |
-| 6 | The session ID changes when you log in | `app.js:159, 309, 371` | Call `req.session.regenerate()` before saving the user |
-| 7 | The session cookie is limited to our own site | `app.js:48` | Add `sameSite: 'lax'`, `httpOnly: true`, `secure` in production |
-| 8 | The login code is not sent back to the browser | `app.js:124` | Only send `devCode` when `NODE_ENV` is not `production` |
-| 9 | Asking for codes over and over gets blocked | `app.js:111` | Add `express-rate-limit` |
-| 10 | A customer name cannot escape the script block | `index.ejs:1295` | `JSON.stringify(user).replace(/</g, '\\u003c')` |
-| 11 | The app will not start in production without a session secret | `app.js:45` | Throw an error instead of using the fallback text |
-
-Suggested order: **#1 and #3 are one-line changes** and fix three tests
-between them. Then #5, #8 and #11, which are a few lines each. #4 and #7
-need a bit more thought.
-
----
-
-## What runs in CI
-
-`.github/workflows/ci.yml` runs on every push and pull request:
-
-```
-lint ─┬─ unit ─┬─ integration   (real mongo:7 container)
-      │        ├─ security      (does not block yet)
-      │        └─ docker        (build the image and check it answers)
-```
 
 ---
 
 ## Writing a new test
 
-Unit tests go in `tests/unit` and must not use the network or database.
-
-Integration tests go in `tests/integration`, start with `startServer()`,
-and should only make data through `tests/helpers/fixtures.js` so that
-cleanup still works.
-
 ```js
 const test = require('node:test');
 const assert = require('node:assert');
 
-const { startServer } = require('../helpers/server');
-const { createClient } = require('../helpers/client');
-const fixtures = require('../helpers/fixtures');
+const validation = require('../../data/validation');
 
-let server;
-
-test.before(async () => {
-    server = await startServer();
-});
-
-test.after(async () => {
-    await fixtures.cleanup();
-    await fixtures.disconnect();
-    await server.stop();
-});
-
-test('says what it checks', async () => {
-    const client = createClient();
-    const result = await client.get('/menu');
-    assert.strictEqual(result.status, 200);
+test('says what it checks', () => {
+    assert.strictEqual(validation.validPhone('91234567'), true);
 });
 ```
 
@@ -194,16 +222,26 @@ Two rules:
 1. **Never put an assertion inside an `if`.** If the condition is false
    the test passes without checking anything, which is worse than having
    no test at all.
-2. The integration tests run one file at a time (`--test-concurrency=1`)
-   because they share one database.
+2. Unit tests must not use the network, the database or the file system.
+   If you need those, the function probably needs splitting up first.
+
+---
+
+## What runs in CI
+
+`.github/workflows/ci.yml`, on every push and pull request:
+
+```
+test           checkout -> npm ci -> lint -> unit tests -> coverage
+known-issues   the bugs above (reports only, never blocks)
+```
 
 ---
 
 ## Things to do later
 
-1. Fix the bugs in the table, then make the security job block the build.
-2. Add ESLint once someone can run `npm i -D eslint` and commit the new
-   `package-lock.json`.
-3. Move `normaliseStatus`, `ORDER_FLOW` and `NEXT_STEP` out of `app.js`
-   into `data/orderStatus.js`, so the order steps can be unit tested
-   directly instead of only through HTTP.
+1. Fix the known bugs, then move those tests into `tests/unit`.
+2. Add ESLint once someone can run `npm i -D eslint` and commit the
+   updated `package-lock.json`.
+3. If integration tests are ever wanted, `data/` is already separated
+   from the routes, so that is the natural next step.

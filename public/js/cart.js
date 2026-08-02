@@ -193,3 +193,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateCartUI();
 });
+
+// ------------------------------------------------------------------
+// Lets the automated tests load this file in Node. In a browser
+// `module` does not exist, so this line is skipped and nothing here
+// changes for the website.
+// ------------------------------------------------------------------
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = {
+        CART_KEY, formatPrice, getCart, saveCart, cartItemKey, addToCart,
+        changeQty, removeFromCart, clearCart, cartCount, cartTotal,
+        optionsSummary, reorderItems
+    };
+}
