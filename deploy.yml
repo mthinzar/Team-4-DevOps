@@ -38,9 +38,16 @@
     - name: Create the .env file with the database connection
       copy:
         dest: "{{ app_dir }}/.env"
-        content: "MONGODB_URI={{ mongodb_uri }}\n"
- 
+        content: |
+          MONGODB_URI={{ mongodb_uri }}
+          SESSION_SECRET={{ session_secret }}
+          HOST_PORT=80
+
+    # docker-compose.yml also defines `mongo` and `tests` services for local
+    # dev — scoping to `app` here means production only ever runs the real
+    # app container against the Atlas URI above, never a throwaway local
+    # Mongo or the test runner.
     - name: Build and start the app with Docker Compose
-      command: docker compose up -d --build
+      command: docker compose up -d --build app
       args:
         chdir: "{{ app_dir }}"

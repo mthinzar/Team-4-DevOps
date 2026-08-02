@@ -1,0 +1,224 @@
+name: CI/CD Pipeline
+
+# Code Push / Pull Request -> Test -> Build -> Deploy
+#
+# Test+build mirrors the pipeline documented in TESTING.md:
+#
+#   lint --+-- unit --+-- integration   (real mongo:7 container)
+#          |          +-- security      (does not block yet, see TESTING.md)
+#          |          +-- docker        (build the image and check it answers)
+#
+# `deploy` is the one job pull requests never reach: it needs
+# integration+docker (not security, which is intentionally
+# non-blocking) and only runs on a push to main, so a PR always stops
+# at "build" and a merge always continues on to "deploy". Ansible
+# (deploy.yml at the repo root) owns everything about *how* the EC2
+# host is configured; this job's only responsibility is triggering it
+# over SSH once CI is green on main.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm run lint
+
+  unit:
+    name: Unit tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm run test:unit
+
+  integration:
+    name: Integration tests
+    needs: unit
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/foodhub
+      SESSION_SECRET: ci-integration-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm run seed
+      - run: npm run test:integration
+
+  security:
+    name: Security tests (non-blocking)
+    needs: unit
+    runs-on: ubuntu-latest
+    # Several of these fail on purpose today - see TESTING.md's bug
+    # table. Remove this line only once that table is empty.
+    continue-on-error: true
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      MONGODB_URI: mongodb://127.0.0.1:27017/foodhub
+      SESSION_SECRET: ci-security-secret
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm run test:security
+
+  docker:
+    name: Docker build & healthcheck
+    needs: unit
+    runs-on: ubuntu-latest
+
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build the production image
+        run: docker build -t foodhub:ci .
+
+      - name: Run it against the mongo service container
+        run: |
+          docker run -d --name foodhub-ci --network host \
+            -e MONGODB_URI=mongodb://127.0.0.1:27017/foodhub \
+            -e SESSION_SECRET=ci-docker-secret \
+            -e PORT=3000 \
+            foodhub:ci
+
+      - name: Wait for the built-in HEALTHCHECK to pass
+        run: |
+          for i in $(seq 1 30); do
+            status=$(docker inspect --format='{{.State.Health.Status}}' foodhub-ci)
+            if [ "$status" = "healthy" ]; then
+              echo "Container is healthy."
+              exit 0
+            fi
+            if [ "$status" = "unhealthy" ]; then
+              echo "Container reported unhealthy:"
+              docker logs foodhub-ci
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for a healthy status."
+          docker logs foodhub-ci
+          exit 1
+
+      - name: Show logs (always, for debugging)
+        if: always()
+        run: docker logs foodhub-ci || true
+
+  deploy:
+    name: Deploy to EC2
+    needs: [integration, docker]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: FoodHub
+
+    steps:
+      - name: Run the Ansible playbook on the EC2 host over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_SSH_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          # deploy.yml (Ansible, at the repo root) does the actual work:
+          # installs Docker/git/ansible on a fresh box, clones or
+          # updates the repo, writes .env, and runs
+          # `docker compose up -d --build app`. Re-running it on every
+          # deploy is intentional and safe - every task in it is
+          # idempotent, so this is the same command whether it's the
+          # very first deploy or the hundredth.
+          script: |
+            set -e
+            command -v ansible-playbook >/dev/null 2>&1 || (sudo apt-get update -y && sudo apt-get install -y ansible)
+            mkdir -p ~/Team-4-DevOps
+            cd ~/Team-4-DevOps
+            if [ -d .git ]; then
+              git fetch origin main
+              git reset --hard origin/main
+            else
+              git clone https://github.com/mthinzar/Team-4-DevOps.git .
+            fi
+            ansible-playbook deploy.yml \
+              -e "mongodb_uri=${{ secrets.MONGODB_URI }}" \
+              -e "session_secret=${{ secrets.SESSION_SECRET }}"
+
+      - name: Confirm the site is answering
+        run: |
+          for i in $(seq 1 15); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' "http://${{ secrets.EC2_HOST }}/admin/login" || echo 000)
+            if [ "$code" = "200" ]; then
+              echo "Site is up (HTTP $code)."
+              exit 0
+            fi
+            sleep 4
+          done
+          echo "Site did not answer with 200 after deploy."
+          exit 1
