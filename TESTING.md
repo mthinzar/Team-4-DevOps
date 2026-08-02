@@ -204,6 +204,90 @@ database.
 
 ---
 
+## Security testing
+
+There is no folder called `security`, because the security tests are not
+separate code — they are the same unit tests, checked for the thing an
+attacker would try. This is what they prove, and where each one lives.
+
+### Money cannot be tampered with — `tests/unit/pricing.test.js`
+
+The cart lives in the browser's localStorage, so the customer can edit
+every field in it before pressing pay. These tests prove that does not
+help them:
+
+| Attack | Test |
+|---|---|
+| Change the price to 1 cent | `priceCart ignores the price sent by the browser` |
+| Send the order to another stall | `priceCart ignores the stall sent by the browser` |
+| Invent a discount in the options | `priceCart prices options from the database, not from the cart` |
+| Claim a discount that does not exist | `optionPriceDiff ignores option names that are not on the dish` |
+| Apply the same add-on twice for a double discount | `optionPriceDiff only counts the same add-on once` |
+| Order a dish that is not on the menu | `priceCart refuses a dish that is not on the menu` |
+| Order 9,999 of something | `priceCart refuses a quantity that is out of range` |
+| Make the total come to zero | `priceCart refuses an order that would come to nothing` |
+| Send a 10,000 line cart to slow the server | `priceCart refuses a cart with too many different dishes` |
+
+### Card details are not kept — `tests/unit/payments.test.js`
+
+| Property | Test |
+|---|---|
+| The card number and CVV never come back out | `authoriseCard never sends the card number or CVV back` |
+| A made-up card number is refused | `authoriseCard rejects a card number that fails the Luhn check` |
+| The payer cannot change the amount on the QR | `buildPayNowPayload includes the PayNow account details` |
+| The QR cannot be edited without breaking it | `buildPayNowPayload ends with a checksum that matches the rest` |
+
+### Nothing dangerous gets uploaded or into a URL — `tests/unit/validation.test.js`
+
+| Property | Test |
+|---|---|
+| SVG, HTML and shell scripts are refused | `isAllowedImageType refuses everything else` |
+| A stall named `<script>alert(1)</script>` gives a safe id | `slugify gives an id that is safe to put in a web address` |
+| Junk in the login, signup and dish forms is refused | the `refuses` tests for phone, email, password and dish |
+
+### Orders cannot be forced through — `tests/unit/orderStatus.test.js`
+
+| Attack | Test |
+|---|---|
+| Mark food collected before cooking it | `an order cannot skip a step` |
+| Un-collect an order | `an order cannot go backwards` |
+| Cancel after the food is made | `an order cannot be cancelled once the food is ready` |
+| Send a made-up status | `a status that does not exist is refused` |
+
+### Secrets are not committed — `scripts/lint.js`
+
+`npm run lint` fails the build if a `.env` file is in the working tree,
+or if `.gitignore` stops listing it.
+
+### Security bugs found but not yet fixed
+
+Three of the five tests in `tests/known-issues/` are security bugs, with
+the fix written in a comment above each one. The upload one is the
+serious one: a file can be saved as `.html` and served by the website as
+a real web page.
+
+### What the security testing does NOT cover
+
+All of these need a running database, so unit tests cannot reach them.
+They were found by reading the code and are listed here so nobody thinks
+a green build means the site is secure:
+
+| Problem | Where |
+|---|---|
+| The login code is sent back to whoever asks, so anyone can log in as anyone | `app.js:124` |
+| No login regenerates the session id | `app.js:159, 309, 371` |
+| The session cookie has no `sameSite` or `secure` setting | `app.js:48` |
+| Nothing stops a form on another website being submitted as a logged-in merchant | multipart routes |
+| A customer can mark their own order collected, then review food they never got | `app.js:1616` |
+| One merchant can change another merchant's order when order ids repeat | `app.js:741` |
+| A customer name containing `</script>` breaks out of the script block | `index.ejs:1295` |
+| No limit on how often login codes can be requested | `app.js:111` |
+| `SESSION_SECRET` falls back to a word printed in the source | `app.js:45` |
+
+Testing those automatically needs integration tests.
+
+---
+
 ## Writing a new test
 
 ```js
