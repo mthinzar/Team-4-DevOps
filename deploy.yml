@@ -46,8 +46,11 @@
     # docker-compose.yml also defines `mongo` and `tests` services for local
     # dev — scoping to `app` here means production only ever runs the real
     # app container against the Atlas URI above, never a throwaway local
-    # Mongo or the test runner.
+    # Mongo or the test runner. --remove-orphans clears out containers
+    # from an earlier version of this file under a different service
+    # name (e.g. the original `web` service) that would otherwise sit
+    # on port 80 forever and block every deploy after a rename.
     - name: Build and start the app with Docker Compose
-      command: docker compose up -d --build app
+      command: docker compose up -d --build --remove-orphans app
       args:
         chdir: "{{ app_dir }}"
