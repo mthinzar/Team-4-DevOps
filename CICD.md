@@ -130,9 +130,11 @@ None of these are set yet — the `deploy` job will fail until they are.
 | `MONGODB_URI` | The production MongoDB Atlas connection string |
 | `SESSION_SECRET` | A long random string for signing session cookies — **not** the `local-dev-secret` fallback used locally |
 
-A `production` [environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)
-is referenced by the `deploy` job (`environment: production`). Creating
-that environment in **Settings → Environments** is optional, but it's
+A `FoodHub` [environment](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment)
+is referenced by the `deploy` job (`environment: FoodHub`) — the 5
+secrets above live here, as environment secrets, rather than as plain
+repository secrets. Creating this environment in **Settings → Environments**
+happens automatically the first time it's referenced, but it's
 the place to add manual-approval-before-deploy or restrict which
 branches can deploy, if the team wants that later.
 
