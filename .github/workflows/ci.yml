@@ -132,7 +132,7 @@ jobs:
           username: ${{ secrets.EC2_SSH_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           # deploy.yml (Ansible, at the repo root) does the actual work:
-          # installs Docker/git/ansible on a fresh box, clones or
+          # installs Docker/git/ansible on a f resh box, clones or
           # updates the repo, writes .env, and runs
           # `docker compose up -d --build app`. Re-running it on every
           # deploy is intentional and safe - every task in it is
