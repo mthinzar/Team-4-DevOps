@@ -142,6 +142,11 @@ jobs:
             set -e
             command -v ansible-playbook >/dev/null 2>&1 || (sudo apt-get update -y && sudo apt-get install -y ansible)
             mkdir -p ~/Team-4-DevOps
+            # deploy.yml runs as root (become: yes), including its own git
+            # task, so files in here can end up root-owned after a run.
+            # Reset ownership before every deploy so this git fetch (running
+            # as the plain SSH user) never hits a permission error.
+            sudo chown -R "$(whoami)":"$(whoami)" ~/Team-4-DevOps
             cd ~/Team-4-DevOps
             if [ -d .git ]; then
               git fetch origin main
