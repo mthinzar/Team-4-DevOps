@@ -4,17 +4,21 @@ name: CI/CD Pipeline
 #
 # Test+build mirrors the pipeline documented in TESTING.md:
 #
-#   lint --+-- unit --+-- integration   (real mongo:7 container)
-#          |          +-- security      (does not block yet, see TESTING.md)
-#          |          +-- docker        (build the image and check it answers)
+#   test (lint -> unit -> coverage) --+-- known-issues   (reports only, never blocks - see TESTING.md)
+#                                     +-- docker          (build the image and check it answers)
+#
+# The whole `test` job needs neither MongoDB nor Docker (TESTING.md:
+# "Nothing here needs MongoDB or Docker") - only `docker` (which builds
+# and runs the real production image) and `deploy` still use a mongo
+# service container, since the actual app always needs a database.
 #
 # `deploy` is the one job pull requests never reach: it needs
-# integration+docker (not security, which is intentionally
-# non-blocking) and only runs on a push to main, so a PR always stops
-# at "build" and a merge always continues on to "deploy". Ansible
-# (deploy.yml at the repo root) owns everything about *how* the EC2
-# host is configured; this job's only responsibility is triggering it
-# over SSH once CI is green on main.
+# test+docker (not known-issues, which is intentionally non-blocking)
+# and only runs on a push to main, so a PR always stops at "build" and
+# a merge always continues on to "deploy". Ansible (deploy.yml at the
+# repo root) owns everything about *how* the EC2 host is configured;
+# this job's only responsibility is triggering it over SSH once CI is
+# green on main.
 
 on:
   push:
@@ -26,8 +30,8 @@ env:
   NODE_VERSION: '22'
 
 jobs:
-  lint:
-    name: Lint
+  test:
+    name: Lint, unit tests & coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,77 +43,16 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
-
-  unit:
-    name: Unit tests
-    needs: lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - run: npm ci
       - run: npm run test:unit
+      - run: npm run test:coverage
 
-  integration:
-    name: Integration tests
-    needs: unit
+  known-issues:
+    name: Known issues (non-blocking)
+    needs: test
     runs-on: ubuntu-latest
-
-    services:
-      mongo:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
-    env:
-      MONGODB_URI: mongodb://127.0.0.1:27017/foodhub
-      SESSION_SECRET: ci-integration-secret
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: npm
-
-      - run: npm ci
-      - run: npm run seed
-      - run: npm run test:integration
-
-  security:
-    name: Security tests (non-blocking)
-    needs: unit
-    runs-on: ubuntu-latest
-    # Several of these fail on purpose today - see TESTING.md's bug
-    # table. Remove this line only once that table is empty.
+    # These fail on purpose today - see TESTING.md's "Known bugs" table.
+    # Remove this line once that table is empty.
     continue-on-error: true
-
-    services:
-      mongo:
-        image: mongo:7
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd "mongosh --quiet --eval 'db.runCommand({ping:1}).ok'"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 10
-
-    env:
-      MONGODB_URI: mongodb://127.0.0.1:27017/foodhub
-      SESSION_SECRET: ci-security-secret
-
     steps:
       - uses: actions/checkout@v4
 
@@ -119,11 +62,11 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run test:security
+      - run: npm run test:issues
 
   docker:
     name: Docker build & healthcheck
-    needs: unit
+    needs: test
     runs-on: ubuntu-latest
 
     services:
@@ -176,7 +119,7 @@ jobs:
 
   deploy:
     name: Deploy to EC2
-    needs: [integration, docker]
+    needs: [test, docker]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: FoodHub

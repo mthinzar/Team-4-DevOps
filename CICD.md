@@ -11,45 +11,39 @@ who owns which part of that path.
 Code Push / Pull Request
         │
         ▼
-┌───────────────┐
-│     lint       │  npm run lint          (syntax, EJS templates, no committed secrets)
-└───────┬────────┘
-        ▼
-┌───────────────┐
-│     unit       │  npm run test:unit     (pricing/payments — no DB, ~1s)
-└───────┬────────┘
-        │
-   ┌────┼─────────────┬─────────────────┐
-   ▼                  ▼                 ▼
-┌─────────────┐  ┌───────────────┐  ┌──────────────┐
-│ integration  │  │   security    │  │    docker     │
-│ real mongo:7 │  │ continue-on-  │  │ build image,   │
-│ container    │  │ error: true   │  │ run it, check  │
-│              │  │ (see below)   │  │ HEALTHCHECK    │
-└──────┬───────┘  └───────────────┘  └───────┬───────┘
-       │                                     │
-       └──────────────────┬──────────────────┘
-                           ▼
-                  ┌─────────────────┐
-                  │      deploy      │  only on a push to main,
-                  │  (SSH + Ansible) │  never on a pull request
-                  └─────────────────┘
+┌────────────────────┐
+│        test          │  npm ci -> lint -> test:unit -> test:coverage
+│  no DB, no Docker    │  (TESTING.md: "Nothing here needs MongoDB or Docker")
+└──────────┬───────────┘
+           │
+     ┌─────┴──────┐
+     ▼            ▼
+┌───────────┐ ┌──────────────┐
+│known-issues│ │    docker     │
+│continue-on-│ │ build image,   │
+│error: true │ │ run it, check  │
+│(see below) │ │ HEALTHCHECK    │
+└───────────┘ └───────┬───────┘
+                       ▼
+              ┌─────────────────┐
+              │      deploy      │  only on a push to main,
+              │  (SSH + Ansible) │  never on a pull request
+              └─────────────────┘
 ```
 
 This is one workflow, `.github/workflows/ci.yml`, so the whole thing
 shows up as a single graph in the GitHub Actions tab. A pull request
-runs every job except `deploy` — `deploy` needs `integration` and
-`docker`, and is additionally gated with
+runs every job except `deploy` — `deploy` needs `test` and `docker`,
+and is additionally gated with
 `if: github.event_name == 'push' && github.ref == 'refs/heads/main'`,
 so a PR always stops at "build" and a merge to `main` always
 continues on to "deploy".
 
-`security` runs, but `continue-on-error: true` means it never fails
-the pipeline. That is intentional, not a shortcut: several of those
-tests fail on purpose today, documented one by one in
-[`TESTING.md`](TESTING.md#bugs-the-tests-currently-catch). Once that
-table is empty, deleting that one line turns it into a normal blocking
-job.
+`known-issues` runs, but `continue-on-error: true` means it never
+fails the pipeline. That is intentional, not a shortcut: those tests
+fail on purpose today, documented one by one in
+[`TESTING.md`](TESTING.md#known-bugs). Once that table is empty,
+deleting that one line turns it into a normal blocking job.
 
 ---
 
@@ -57,20 +51,20 @@ job.
 
 | Job | Needs a database? | Blocks the pipeline? | What it actually runs |
 |---|---|---|---|
-| `lint` | No | Yes | `npm run lint` |
-| `unit` | No | Yes | `npm run test:unit` |
-| `integration` | Yes (service container) | Yes | `npm run seed` then `npm run test:integration` |
-| `security` | Yes (service container) | No (`continue-on-error`) | `npm run test:security` |
+| `test` | No | Yes | `npm run lint`, `npm run test:unit`, `npm run test:coverage` |
+| `known-issues` | No | No (`continue-on-error`) | `npm run test:issues` |
 | `docker` | Yes (service container) | Yes | `docker build`, run the image, wait for `HEALTHCHECK` |
 | `deploy` | No (talks to production DB via Ansible) | — (only reachable after the above) | SSH into EC2, run `ansible-playbook deploy.yml` |
 
-The `integration`, `security`, and `docker` jobs all spin up their own
-`mongo:7` [service container](https://docs.github.com/en/actions/using-containerized-services/about-service-containers) —
-this is the GitHub-Actions equivalent of the `docker compose up -d mongo`
-step described in `TESTING.md` for running the suite locally. Nothing
-in CI ever touches the real Atlas database; `tests/helpers/server.js`
-actively refuses to start against a non-local `MONGODB_URI`, on
-purpose.
+Only `docker` needs a database — `test` and `known-issues` are pure
+unit tests against `data/pricing.js`, `data/payments.js`,
+`data/orderStatus.js`, `data/validation.js`, and `public/js/cart.js`,
+none of which touch MongoDB (see `TESTING.md` for why the test suite
+was restructured this way). `docker` spins up its own `mongo:7`
+[service container](https://docs.github.com/en/actions/using-containerized-services/about-service-containers)
+since it builds and runs the *real* production image, which always
+needs a database to serve anything. Nothing in CI ever touches the
+real Atlas database.
 
 ---
 
@@ -145,9 +139,9 @@ branches can deploy, if the team wants that later.
 | Area | Owner | What's there |
 |---|---|---|
 | Docker (base image) | Justyn | The original single-stage `Dockerfile` and `docker-compose.yml` |
-| Automated testing | m-AHO | `tests/` (unit, integration, security), `scripts/lint.js`, `TESTING.md`, and the hardened multi-stage production `Dockerfile` |
+| Automated testing | m-AHO | `tests/` (unit tests + known-issues), `scripts/lint.js`, `TESTING.md`, `data/orderStatus.js` and `data/validation.js` (business logic extracted out of `app.js` so it's unit-testable), and the hardened multi-stage production `Dockerfile` |
 | Infrastructure as Code / AWS EC2 | Muhammad Raees | `deploy.yml` — the Ansible playbook that provisions a fresh EC2 host end to end |
-| **CI/CD pipeline (this doc)** | **May** | `.github/workflows/ci.yml` — wiring lint/unit/integration/security/docker/deploy into one pipeline; reconciling `docker-compose.yml` and `deploy.yml` so local dev, CI, and production all use the same files without conflicting; this document |
+| **CI/CD pipeline (this doc)** | **May** | `.github/workflows/ci.yml` — wiring test/known-issues/docker/deploy into one pipeline; reconciling `docker-compose.yml` and `deploy.yml` so local dev, CI, and production all use the same files without conflicting; this document |
 
 The reconciliation work above (`docker-compose.yml` serving both local
 dev and production, `deploy.yml`'s one-line scoping fix) sits at the
