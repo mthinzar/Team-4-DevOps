@@ -1,0 +1,46 @@
+---
+# ============================================================
+#  FoodHub — automated server setup (Infrastructure as Code)
+#  Sets up a fresh Ubuntu EC2 and starts the app in one command.
+# ============================================================
+- name: Deploy FoodHub to EC2
+  hosts: localhost
+  connection: local
+  become: yes                # run as admin (like sudo)
+ 
+  vars:
+    app_dir: /home/ubuntu/Team-4-DevOps
+    repo_url: https://github.com/mthinzar/Team-4-DevOps.git
+ 
+  tasks:
+    - name: Install Docker, Docker Compose and git
+      apt:
+        name:
+          - docker.io
+          - docker-compose-v2
+          - git
+        update_cache: yes
+        state: present
+ 
+    - name: Make sure Docker is running and starts on boot
+      service:
+        name: docker
+        state: started
+        enabled: yes
+ 
+    - name: Clone (or update) the project from GitHub
+      git:
+        repo: "{{ repo_url }}"
+        dest: "{{ app_dir }}"
+        version: main
+        update: yes
+ 
+    - name: Create the .env file with the database connection
+      copy:
+        dest: "{{ app_dir }}/.env"
+        content: "MONGODB_URI={{ mongodb_uri }}\n"
+ 
+    - name: Build and start the app with Docker Compose
+      command: docker compose up -d --build
+      args:
+        chdir: "{{ app_dir }}"
