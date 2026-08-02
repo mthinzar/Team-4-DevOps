@@ -31,6 +31,14 @@ const {
     newPaymentReference
 } = require('./data/payments');
 const QRCode = require('qrcode');
+const {
+    ORDER_FLOW, ORDER_STATUS_LABELS, NEXT_STEP, CANCELLABLE, PAYMENT_LABELS,
+    normaliseStatus, canCancel, canMoveTo, newOrderId, newQueueNumber
+} = require('./data/orderStatus');
+const {
+    validPhone, validEmail, validPassword, merchantStatusMessage,
+    validDish, isAllowedImageType, uploadFileName
+} = require('./data/validation');
 const { findAdminById, createAdmin, verifyAdminPassword, deleteAdmin } = require('./data/admins');
 const { getPlatformDashboardStats, getStoreSalesBreakdown, getReportsData, getStoreRatingBreakdown } = require('./data/adminStats');
 
@@ -71,13 +79,10 @@ fs.mkdirSync(uploadDir, { recursive: true });
 const upload = multer({
     storage: multer.diskStorage({
         destination: (req, file, cb) => cb(null, uploadDir),
-        filename: (req, file, cb) => {
-            const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
-            cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-        }
+        filename: (req, file, cb) => cb(null, uploadFileName(file.originalname))
     }),
     fileFilter: (req, file, cb) => {
-        if (/^image\/(png|jpe?g|webp|gif)$/.test(file.mimetype)) cb(null, true);
+        if (isAllowedImageType(file.mimetype)) cb(null, true);
         else cb(new Error('Only image files (png, jpg, webp, gif) are allowed.'));
     },
     limits: { fileSize: 5 * 1024 * 1024 }
@@ -103,10 +108,6 @@ function handleUpload(fieldName) {
 
 const pendingCodes = new Map(); // phone -> { code, expiresAt, name }
 const CODE_TTL_MS = 5 * 60 * 1000;
-
-function validPhone(phone) {
-    return /^[689]\d{7}$/.test(String(phone || '').replace(/\s+/g, ''));
-}
 
 app.post('/auth/send-code', (req, res) => {
     const phone = String(req.body.phone || '').replace(/\s+/g, '');
@@ -176,13 +177,6 @@ app.post('/auth/logout', (req, res) => {
 // customer phone-OTP session above.
 // ------------------------------------------------------------------
 
-function merchantStatusMessage(status) {
-    if (status === 'pending') return 'Your merchant application is still awaiting admin approval.';
-    if (status === 'rejected') return 'Your merchant application was not approved.';
-    if (status === 'suspended') return 'Your merchant account has been suspended.';
-    return 'Your merchant account is not currently active.';
-}
-
 // Re-checks approval status fresh from the database on every request
 // (rather than trusting the session) so an admin suspending a merchant
 // takes effect immediately, not just after their next login.
@@ -243,10 +237,10 @@ app.post('/merchant/signup', handleUpload('stallImage'), async (req, res) => {
         const confirmPassword = String(req.body.confirmPassword || '');
         const stallMode = req.body.stallMode === 'new' ? 'new' : 'existing';
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (!validEmail(email)) {
             return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
         }
-        if (password.length < 6) {
+        if (!validPassword(password)) {
             return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
         }
         if (password !== confirmPassword) {
@@ -471,12 +465,12 @@ app.get('/merchant/menu', requireMerchant, attachMerchantStall, async (req, res)
 app.post('/merchant/menu', requireMerchant, handleUpload('image'), async (req, res) => {
     try {
         const stallId = req.session.merchant.stallId;
-        const name = String(req.body.name || '').trim();
-        const price = parseFloat(req.body.price);
-
-        if (!name || !(price > 0)) {
-            return res.status(400).json({ success: false, message: 'Enter a dish name and a valid price.' });
+        const dish = validDish(req.body.name, req.body.price);
+        if (!dish.ok) {
+            return res.status(400).json({ success: false, message: dish.message });
         }
+        const name = dish.name;
+        const price = dish.price;
 
         let options = null;
         try {
@@ -592,36 +586,6 @@ app.post('/merchant/menu/:foodId/toggle-soldout', requireMerchant, async (req, r
 // next step, or cancel it before it is ready — nothing else. The old six-entry
 // dropdown let a brand-new order jump straight to "collected", or a finished
 // order slide back to the start, which is what made the queue behave oddly.
-const ORDER_FLOW = ['pending', 'preparing', 'ready', 'completed'];
-
-const ORDER_STATUS_LABELS = {
-    pending: 'New order',
-    preparing: 'Preparing',
-    ready: 'Ready for collection',
-    completed: 'Collected',
-    cancelled: 'Cancelled'
-};
-
-// The single action button shown on each order, keyed by its current status.
-const NEXT_STEP = {
-    pending:   { status: 'preparing', label: 'Accept & start preparing' },
-    preparing: { status: 'ready',     label: 'Mark ready for collection' },
-    ready:     { status: 'completed', label: 'Mark collected' }
-};
-
-const CANCELLABLE = ['pending', 'preparing'];
-
-// Older documents were written with 'accepted' and 'collected'. Fold them into
-// the four-step flow on read so history keeps working without a migration.
-function normaliseStatus(status) {
-    if (status === 'accepted') return 'preparing';
-    if (status === 'collected') return 'completed';
-    if (status === 'cancelled' || ORDER_FLOW.includes(status)) return status;
-    return 'pending';
-}
-
-const PAYMENT_LABELS = { paynow: 'PayNow', card: 'Card', counter: 'Pay at stall' };
-
 app.get('/merchant/orders', requireMerchant, attachMerchantStall, async (req, res) => {
     try {
         const db = getDB();
@@ -664,20 +628,17 @@ app.post('/merchant/orders/:orderId/status', requireMerchant, async (req, res) =
         const current = normaliseStatus(order.status);
 
         if (requested === 'cancelled') {
-            if (!CANCELLABLE.includes(current)) {
+            if (!canCancel(current)) {
                 return res.status(400).json({
                     success: false,
                     message: 'An order can only be cancelled before it is ready for collection.'
                 });
             }
-        } else {
-            const next = NEXT_STEP[current];
-            if (!next || next.status !== requested) {
-                return res.status(400).json({
-                    success: false,
-                    message: `"${ORDER_STATUS_LABELS[current]}" cannot move to that step.`
-                });
-            }
+        } else if (!canMoveTo(current, requested)) {
+            return res.status(400).json({
+                success: false,
+                message: `"${ORDER_STATUS_LABELS[current]}" cannot move to that step.`
+            });
         }
 
         const update = { status: requested, statusUpdatedAt: new Date() };
@@ -829,10 +790,10 @@ app.post('/admin/merchants/new', requireAdmin, handleUpload('stallImage'), async
         const confirmPassword = String(req.body.confirmPassword || '');
         const stallMode = req.body.stallMode === 'new' ? 'new' : 'existing';
 
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        if (!validEmail(email)) {
             return res.status(400).json({ success: false, message: 'Enter a valid email address.' });
         }
-        if (password.length < 6) {
+        if (!validPassword(password)) {
             return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
         }
         if (password !== confirmPassword) {
@@ -1104,7 +1065,7 @@ app.post('/admin/users/admins/new', requireAdmin, async (req, res) => {
         const password = String(req.body.password || '');
         const name = String(req.body.name || '').trim();
 
-        if (!adminId || password.length < 6) {
+        if (!adminId || !validPassword(password)) {
             return res.status(400).json({ success: false, message: 'Enter an admin ID and a password of at least 6 characters.' });
         }
         const existing = await findAdminById(adminId);
@@ -1341,8 +1302,8 @@ async function createOrders({ lines, userId, customerName, payment }) {
     for (const [stallId, groupLines] of Object.entries(groups)) {
         orderIndex += 1;
         const groupTotal = Math.round(groupLines.reduce((sum, l) => sum + l.lineTotal, 0) * 100) / 100;
-        const orderId = 'FH-' + (Date.now() + orderIndex).toString().slice(-6);
-        const queueNum = Math.floor(Math.random() * 899) + 101;
+        const orderId = newOrderId(orderIndex);
+        const queueNum = newQueueNumber();
         const prepTimeSeconds = 180 + groupLines.reduce((sum, l) => sum + l.qty * 90, 0);
 
         const order = {
