@@ -8,14 +8,7 @@
 const bcrypt = require('bcryptjs');
 const { ObjectId } = require('mongodb');
 const { getDB } = require('../db');
-
-function slugify(name) {
-    return String(name || '')
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/(^-|-$)/g, '');
-}
+const { slugify } = require('./validation');
 
 async function findMerchantByEmail(email) {
     const db = getDB();
