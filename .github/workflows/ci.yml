@@ -20,6 +20,8 @@ name: CI/CD Pipeline
 # this job's only responsibility is triggering it over SSH once CI is
 # green on main.
 
+# Test
+
 on:
   push:
     branches: [main]
